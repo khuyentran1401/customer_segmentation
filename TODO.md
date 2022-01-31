@@ -1,2 +1,0 @@
-- [ ] track data
-- [x] track config file
