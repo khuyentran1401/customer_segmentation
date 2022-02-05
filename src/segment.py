@@ -11,7 +11,6 @@ from prefect.engine.serializers import PandasSerializer
 from sklearn.cluster import AgglomerativeClustering, KMeans
 from sklearn.decomposition import PCA
 from yellowbrick.cluster import KElbowVisualizer
-
 import wandb
 from helper import log_data
 
