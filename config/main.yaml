@@ -1,4 +1,4 @@
 defaults:
   - data_catalog: data_catalog
-  - process: process
-  - segment: segment
+  - process: process_4
+  - segment: KMeans

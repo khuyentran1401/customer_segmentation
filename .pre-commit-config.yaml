@@ -20,4 +20,10 @@ repos:
     hooks:
     -   id: mypy
         args: [--ignore-missing-imports]
-
+- repo: https://github.com/nbQA-dev/nbQA
+  rev: 0.10.0
+  hooks:
+    - id: nbqa-flake8
+    - id: nbqa-isort
+    - id: nbqa-mypy
+    - id: nbqa-black
