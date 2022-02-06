@@ -24,6 +24,7 @@ ipykernel = "^6.7.0"
 pandasgui = "^0.2.13"
 pytest = "^6.2.5"
 tox = "^3.24.5"
+nbqa = "^1.2.3"
 
 [virtualenvs]
 create = true
