@@ -25,6 +25,9 @@ pandasgui = "^0.2.13"
 pytest = "^6.2.5"
 tox = "^3.24.5"
 nbqa = "^1.2.3"
+flake8 = "^4.0.1"
+loguru = "^0.6.0"
+rich = "^11.1.0"
 
 [virtualenvs]
 create = true

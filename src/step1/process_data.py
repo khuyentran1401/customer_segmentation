@@ -3,7 +3,7 @@ from feature_engine.wrappers import SklearnTransformerWrapper
 from sklearn.preprocessing import StandardScaler
 
 
-def load_data(data_name: str, load_kwargs: DictConfig) -> pd.DataFrame:
+def load_data(data_name: str, load_kwargs: dict) -> pd.DataFrame:
     return pd.read_csv(data_name, **load_kwargs)
 
 
@@ -56,7 +56,7 @@ def drop_outliers(df: pd.DataFrame, column_threshold: dict):
     return df.reset_index(drop=True)
 
 
-def drop_columns_and_rows(df: pd.DataFrame, columns: DictConfig):
+def drop_columns_and_rows(df: pd.DataFrame, columns: dict):
     df = df.pipe(drop_features, keep_columns=columns["keep"]).pipe(
         drop_outliers, column_threshold=columns["remove_outliers_threshold"]
     )
@@ -82,28 +82,38 @@ def process_data():
         "Alone": 1,
     }
 
-    keep_columns = [
-        "Income",
-        "Recency",
-        "NumWebVisitsMonth",
-        "AcceptedCmp3",
-        "AcceptedCmp4",
-        "AcceptedCmp5",
-        "AcceptedCmp1",
-        "AcceptedCmp2",
-        "Complain",
-        "Response",
-        "age",
-        "total_purchases",
-        "enrollment_years",
-        "family_size",
-    ]
+    columns = {
+        "keep": [
+            "Income",
+            "Recency",
+            "NumWebVisitsMonth",
+            "AcceptedCmp3",
+            "AcceptedCmp4",
+            "AcceptedCmp5",
+            "AcceptedCmp1",
+            "AcceptedCmp2",
+            "Complain",
+            "Response",
+            "age",
+            "total_purchases",
+            "enrollment_years",
+            "family_size",
+        ],
+        "remove_outliers_threshold": {
+            "age": 90,
+            "Income": 600000,
+        },
+    }
 
     df = load_data(
-        "../data/raw/marketing_campaign.csv",
+        "data/raw/marketing_campaign.csv",
         {"sep": "\t"},
     )
     df = drop_na(df)
     df = get_new_features(df, family_size)
-    df = drop_columns_and_rows(df, keep_columns)
+    df = drop_columns_and_rows(df, columns)
     df = scale_features(df)
+    df.to_csv("data/intermediate/processed.csv")
+
+if __name__ == "__main__":
+    process_data()
