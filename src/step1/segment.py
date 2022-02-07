@@ -1,12 +1,9 @@
-from crypt import methods
 from typing import Tuple
 
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-from sklearn.cluster import (DBSCAN, OPTICS, AffinityPropagation,
-                             AgglomerativeClustering, Birch, KMeans, MeanShift,
-                             SpectralClustering)
+from sklearn.cluster import AgglomerativeClustering, KMeans, SpectralClustering
 from sklearn.decomposition import PCA
 from yellowbrick.cluster import KElbowVisualizer
 
@@ -41,7 +38,7 @@ def create_3d_plot(projection: dict, image_path: str) -> None:
     ax.set_title("A 3D Projection Of Data In The Reduced Dimension")
     plt.savefig(image_path)
 
-@logger.catch
+
 def get_best_k_cluster(
     pca_df: pd.DataFrame, cluster_config: dict, image_path: str
 ) -> pd.DataFrame:
@@ -49,10 +46,8 @@ def get_best_k_cluster(
     fig = plt.figure(figsize=(10, 8))
     ax = fig.add_subplot(111)
 
-    model = eval(cluster_config['algorithm'])()
-    elbow = KElbowVisualizer(
-        model, metric=cluster_config['metric']
-    )
+    model = eval(cluster_config["algorithm"])()
+    elbow = KElbowVisualizer(model, metric=cluster_config["metric"])
 
     elbow.fit(pca_df)
     elbow.fig.savefig(image_path)
@@ -99,25 +94,26 @@ def plot_clusters(
     plt.savefig(image_path)
 
 
-
 def segment() -> None:
 
-    
     data = pd.read_csv("data/intermediate/processed.csv", index_col=0)
 
-
     pca_df = reduce_dimension(
-        data, n_components=3, columns=['col1', 'col2', 'col3']
+        data, n_components=3, columns=["col1", "col2", "col3"]
     )
 
     projections = get_3d_projection(pca_df)
 
-    create_3d_plot(projections, image_path='image/3d_projection.png')
+    create_3d_plot(projections, image_path="image/3d_projection.png")
 
     k_best = get_best_k_cluster(
         pca_df,
-        cluster_config={'k': 10, 'metric': 'distortion', 'algorithm': 'KMeans'},
-        image_path='image/elbow.png',
+        cluster_config={
+            "k": 10,
+            "metric": "distortion",
+            "algorithm": "KMeans",
+        },
+        image_path="image/elbow.png",
     )
 
     preds = get_clusters(pca_df, algorithm="KMeans", k=k_best)
@@ -131,6 +127,6 @@ def segment() -> None:
         image_path="image/cluster.png",
     )
 
+
 if __name__ == "__main__":
     segment()
-
