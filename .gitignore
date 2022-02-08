@@ -10,4 +10,5 @@ customer-segmentation-a-AULLE--py3.8
 .tox
 image
 wandb
+.vscode 
 output

@@ -56,9 +56,9 @@ def drop_outliers(df: pd.DataFrame, column_threshold: dict):
     return df.reset_index(drop=True)
 
 
-def drop_columns_and_rows(df: pd.DataFrame, columns: dict):
-    df = df.pipe(drop_features, keep_columns=columns["keep"]).pipe(
-        drop_outliers, column_threshold=columns["remove_outliers_threshold"]
+def drop_columns_and_rows(df: pd.DataFrame, keep_columns: list, remove_outliers_threshold: dict):
+    df = df.pipe(drop_features, keep_columns=keep_columns).pipe(
+        drop_outliers, column_threshold=remove_outliers_threshold
     )
 
     return df
@@ -82,8 +82,7 @@ def process_data():
         "Alone": 1,
     }
 
-    columns = {
-        "keep": [
+    keep_columns = [
             "Income",
             "Recency",
             "NumWebVisitsMonth",
@@ -98,12 +97,13 @@ def process_data():
             "total_purchases",
             "enrollment_years",
             "family_size",
-        ],
-        "remove_outliers_threshold": {
+        ]
+        
+    remove_outliers_threshold = {
             "age": 90,
             "Income": 600000,
-        },
-    }
+        }
+    
 
     df = load_data(
         "data/raw/marketing_campaign.csv",
@@ -111,7 +111,7 @@ def process_data():
     )
     df = drop_na(df)
     df = get_new_features(df, family_size)
-    df = drop_columns_and_rows(df, columns)
+    df = drop_columns_and_rows(df, keep_columns, remove_outliers_threshold)
     df = scale_features(df)
     df.to_csv("data/intermediate/processed.csv")
 

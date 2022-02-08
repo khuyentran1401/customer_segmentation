@@ -8,16 +8,12 @@ from omegaconf import DictConfig
 from prefect import Flow, task
 from prefect.engine.results import LocalResult
 from prefect.engine.serializers import PandasSerializer
-from sklearn.cluster import (DBSCAN, OPTICS, AffinityPropagation,
-                             AgglomerativeClustering, Birch, KMeans, MeanShift,
-                             SpectralClustering)
+from sklearn.cluster import AgglomerativeClustering, KMeans, SpectralClustering
 from sklearn.decomposition import PCA
 from yellowbrick.cluster import KElbowVisualizer
 
 import wandb
 from helper import log_data
-from loguru import logger
-from rich import inspect 
 
 OUTPUT_DIR = "data/final/"
 OUTPUT_FILE = "segmented.csv"
