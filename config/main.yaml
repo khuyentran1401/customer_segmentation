@@ -1,4 +1,6 @@
 defaults:
   - data_catalog: data_catalog
-  - process: process_1
+  - process: process_4
   - segment: KMeans
+
+pipeline: all

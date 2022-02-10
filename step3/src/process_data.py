@@ -1,23 +1,16 @@
+from email.policy import default
 import pandas as pd
 from feature_engine.wrappers import SklearnTransformerWrapper
-from hydra.utils import to_absolute_path
-from omegaconf import DictConfig
-from prefect import Flow, task
+from sklearn.preprocessing import StandardScaler
+from prefect import Flow, task, Parameter
 from prefect.engine.results import LocalResult
 from prefect.engine.serializers import PandasSerializer
-from sklearn.preprocessing import StandardScaler
-
-from helper import log_data, artifact_task
-from wandb import wandb
-
+from helper import artifact_task
 
 @artifact_task
-def load_data(data_name: str, load_kwargs: DictConfig) -> pd.DataFrame:
-    data = pd.read_csv(data_name, **load_kwargs)
-
-    log_data(data_name, "raw_data")
-
-    return data
+def load_data(data_name: str, load_kwargs: dict) -> pd.DataFrame:
+    df = pd.read_csv(data_name, **load_kwargs)
+    return df
 
 
 @artifact_task
@@ -52,7 +45,6 @@ def drop_features(df: pd.DataFrame, keep_columns: list):
     df = df[keep_columns]
     return df
 
-
 def drop_outliers(df: pd.DataFrame, column_threshold: dict):
     for col, threshold in column_threshold.items():
         df = df[df[col] < threshold]
@@ -60,9 +52,11 @@ def drop_outliers(df: pd.DataFrame, column_threshold: dict):
 
 
 @artifact_task
-def drop_columns_and_rows(df: pd.DataFrame, columns: DictConfig):
-    df = df.pipe(drop_features, keep_columns=columns["keep"]).pipe(
-        drop_outliers, column_threshold=columns["remove_outliers_threshold"]
+def drop_columns_and_rows(
+    df: pd.DataFrame, keep_columns: list, remove_outliers_threshold: dict
+):
+    df = df.pipe(drop_features, keep_columns=keep_columns).pipe(
+        drop_outliers, column_threshold=remove_outliers_threshold
     )
 
     return df
@@ -74,38 +68,74 @@ def scale_features(df: pd.DataFrame):
     return scaler.fit_transform(df)
 
 
-def process_data(config: DictConfig):
-    data_config = config.data_catalog
-    code_config = config.process
+def process_data():
+
+    family_size = Parameter(
+        "family_size",
+        default={
+            "Married": 2,
+            "Together": 2,
+            "Absurd": 1,
+            "Widow": 1,
+            "YOLO": 1,
+            "Divorced": 1,
+            "Single": 1,
+            "Alone": 1,
+        },
+    )
+
+    keep_columns = Parameter(
+        "keep_columns",
+        default=[
+            "Income",
+            "Recency",
+            "NumWebVisitsMonth",
+            "AcceptedCmp3",
+            "AcceptedCmp4",
+            "AcceptedCmp5",
+            "AcceptedCmp1",
+            "AcceptedCmp2",
+            "Complain",
+            "Response",
+            "age",
+            "total_purchases",
+            "enrollment_years",
+            "family_size",
+        ],
+    )
+
+    remove_outliers_threshold = Parameter(
+        "remove_outliers_threshold",
+        default={
+            "age": 90,
+            "Income": 600000,
+        },
+    )
 
     with Flow(
         "process_data",
         result=LocalResult(
-            to_absolute_path(data_config.intermediate.dir),
-            location=data_config.intermediate.name,
+            "data/intermediate",
+            location="processed.csv",
             serializer=PandasSerializer("csv"),
         ),
     ) as flow:
         df = load_data(
-            to_absolute_path(data_config.raw_data.path),
-            data_config.raw_data.load_kwargs,
+            "data/raw/marketing_campaign.csv",
+            {"sep": "\t"},
         )
         df = drop_na(df)
         df = get_age(df)
         df = get_total_children(df)
         df = get_total_purchases(df)
         df = get_enrollment_years(df)
-        df = get_family_size(df, code_config.encode.family_size)
-        df = drop_columns_and_rows(df, code_config.columns)
+        df = get_family_size(df, family_size)
+        df = drop_columns_and_rows(df, keep_columns, remove_outliers_threshold)
         df = scale_features(df)
 
-    flow.run()
-    flow.register(project_name="customer_segmentation")
-    
-    log_data(
-        data_config.intermediate.name,
-        "preprocessed_data",
-        to_absolute_path(data_config.intermediate.dir),
-    )
+    # flow.run()
+    flow.register(project_name="Customer segmentation")
 
-    wandb.config.update({"num_cols": len(code_config.columns.keep)})
+
+if __name__ == "__main__":
+    process_data()

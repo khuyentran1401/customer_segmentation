@@ -1,11 +1,13 @@
-from numpy import isin
 from prefect import task
-from functools import wraps 
+from functools import wraps, partial
 from prefect.backend.artifacts import create_markdown_artifact
 import pandas as pd  
 
-def artifact_task(func, **task_init_kwargs):
+def artifact_task(func=None, **task_init_kwargs):
   
+    if func is None: 
+        return partial(artifact_task, **task_init_kwargs)
+
     @wraps(func)
     def safe_func(**kwargs):
         res = func(**kwargs)

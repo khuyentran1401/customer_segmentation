@@ -3,9 +3,10 @@ from typing import Tuple
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
+from sklearn.cluster import AgglomerativeClustering, KMeans, SpectralClustering
 from sklearn.decomposition import PCA
 from yellowbrick.cluster import KElbowVisualizer
-from prefect import Flow, task, Parameter
+from prefect import Flow, task
 from prefect.engine.results import LocalResult
 from prefect.engine.serializers import PandasSerializer
 
@@ -46,10 +47,8 @@ def create_3d_plot(projection: dict, image_path: str) -> None:
 
 @task
 def get_best_k_cluster(
-    pca_df: pd.DataFrame, cluster_config: Parameter, image_path: str
+    pca_df: pd.DataFrame, cluster_config: dict, image_path: str
 ) -> pd.DataFrame:
-
-    from sklearn.cluster import AgglomerativeClustering, KMeans, SpectralClustering
 
     fig = plt.figure(figsize=(10, 8))
     ax = fig.add_subplot(111)
@@ -67,12 +66,8 @@ def get_best_k_cluster(
 
 @task
 def get_clusters(
-    pca_df: pd.DataFrame, cluster_config: Parameter, k: int
+    pca_df: pd.DataFrame, algorithm: str, k: int
 ) -> Tuple[pd.DataFrame, pd.DataFrame]:
-
-    from sklearn.cluster import AgglomerativeClustering, KMeans, SpectralClustering
-
-    algorithm = cluster_config["algorithm"]
     model = eval(algorithm)(n_clusters=k)
 
     # Fit model and predict clusters
@@ -116,23 +111,20 @@ def plot_clusters(
 
 def segment() -> None:
 
-    # Create a flow
     with Flow(
         "segmentation",
     ) as flow:
-
-        # ---------------------------------------------------------------------------- #
-        # Define parameters
-
-        cluster_config = Parameter('cluster_config', default={
-                "k": 10,
-                "metric": "distortion",
-                "algorithm": "KMeans",
-            })
-
-        # ---------------------------------------------------------------------------- #
-        # Define tasks
-        data = pd.read_csv("data/intermediate/processed.csv", index_col=0)
+        data = (
+            LocalResult(
+                dir="data/intermediate",
+                serializer=PandasSerializer(
+                    "csv",
+                    deserialize_kwargs={"index_col": 0},
+                ),
+            )
+            .read(location="processed.csv")
+            .value
+        )
 
         pca_df = reduce_dimension(
             data, n_components=3, columns=["col1", "col2", "col3"]
@@ -144,11 +136,15 @@ def segment() -> None:
 
         k_best = get_best_k_cluster(
             pca_df,
-            cluster_config=cluster_config,
+            cluster_config={
+                "k": 10,
+                "metric": "distortion",
+                "algorithm": "KMeans",
+            },
             image_path="image/elbow.png",
         )
 
-        preds = get_clusters(pca_df, cluster_config=cluster_config, k=k_best)
+        preds = get_clusters(pca_df, algorithm="KMeans", k=k_best)
 
         data = insert_clusters_to_df(data, clusters=preds)
 
