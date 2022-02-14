@@ -64,7 +64,7 @@ if st.button("Get the cluster of this customer"):
         data_json = json.dumps(data)
 
         prediction = requests.post(
-            "http://127.0.0.1:5000/predict",
+            "https://bentoml-her0ku-mty0ndg3mza0ngo.herokuapp.com/predict",
             headers={"content-type": "application/json"},
             data=data_json,
         ).text

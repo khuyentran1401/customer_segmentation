@@ -1,16 +1,19 @@
-name: process_1
+raw_data: 
+  path: data/raw/marketing_campaign.csv
+
+intermediate:
+  dir: data/intermediate
+  name: processed.csv
+  path: ${intermediate.dir}/${intermediate.name}
+
+flow: all
+
 columns:
   keep:
     - Income
     - Recency
     - NumWebVisitsMonth
-    - AcceptedCmp3
-    - AcceptedCmp4
-    - AcceptedCmp5
-    - AcceptedCmp1
-    - AcceptedCmp2
     - Complain
-    - Response
     - age
     - total_purchases
     - enrollment_years
@@ -30,4 +33,3 @@ encode:
     Divorced: 1
     Single: 1
     Alone: 1
-
