@@ -1,9 +1,9 @@
 import pickle
 
 import pandas as pd
-from feature_engine.wrappers import SklearnTransformerWrapper
 from hydra.utils import to_absolute_path
 from omegaconf import DictConfig
+from sklearn.decomposition import PCA
 from sklearn.preprocessing import StandardScaler
 
 
@@ -65,13 +65,21 @@ def get_scaler(df: pd.DataFrame):
     scaler = StandardScaler()
     scaler.fit(df)
 
-    saved_path = to_absolute_path("processors/scaler.pkl")
-    pickle.dump(scaler, open(saved_path, "wb"))
     return scaler
 
 
-def scale_features(df: pd.DataFrame, scaler: SklearnTransformerWrapper):
+def scale_features(df: pd.DataFrame, scaler: StandardScaler):
     return pd.DataFrame(scaler.transform(df), columns=df.columns)
+
+
+def get_pca_model(data: pd.DataFrame) -> PCA:
+    pca = PCA(n_components=3)
+    pca.fit(data)
+    return pca
+
+
+def reduce_dimension(df: pd.DataFrame, pca: PCA) -> pd.DataFrame:
+    return pd.DataFrame(pca.transform(df), columns=["col1", "col2", "col3"])
 
 
 def process_data(config: DictConfig):
@@ -87,7 +95,20 @@ def process_data(config: DictConfig):
     df = get_family_size(df, config.encode.family_size)
     df = drop_columns_and_rows(df, config.columns)
 
+    # Scale data
     scaler = get_scaler(df)
+
+    saved_path = to_absolute_path("processors/scaler.pkl")
+    pickle.dump(scaler, open(saved_path, "wb"))
+
     df = scale_features(df, scaler)
 
-    df.to_csv(to_absolute_path(config.intermediate.path), index=False)
+    # Reduce dimension
+    pca = get_pca_model(df)
+    save_path = to_absolute_path("processors/PCA.pkl")
+    pickle.dump(pca, open(save_path, "wb"))
+
+    pca_df = reduce_dimension(df, pca)
+
+    # Save processed data
+    pca_df.to_csv(to_absolute_path(config.intermediate.path), index=False)

@@ -9,22 +9,7 @@ import pandas as pd
 from hydra.utils import to_absolute_path
 from omegaconf import DictConfig
 from sklearn.cluster import KMeans
-from sklearn.decomposition import PCA
 from yellowbrick.cluster import KElbowVisualizer
-
-
-def get_pca_model(data: pd.DataFrame) -> PCA:
-    pca = PCA(n_components=3)
-    pca.fit(data)
-
-    save_path = to_absolute_path("processors/PCA.pkl")
-    pickle.dump(pca, open(save_path, "wb"))
-
-    return pca
-
-
-def reduce_dimension(df: pd.DataFrame, pca: PCA) -> pd.DataFrame:
-    return pd.DataFrame(pca.transform(df), columns=["col1", "col2", "col3"])
 
 
 def get_best_k_cluster(pca_df: pd.DataFrame) -> pd.DataFrame:
@@ -55,12 +40,9 @@ def save_model(model):
 
 def segment(config: DictConfig) -> None:
 
-    data = pd.read_csv(
+    pca_df = pd.read_csv(
         to_absolute_path(config.intermediate.path),
     )
-
-    pca = get_pca_model(data)
-    pca_df = reduce_dimension(data, pca)
 
     k_best = get_best_k_cluster(pca_df)
     model = get_clusters_model(pca_df, k_best)
