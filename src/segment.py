@@ -27,11 +27,6 @@ def reduce_dimension(df: pd.DataFrame, pca: PCA) -> pd.DataFrame:
     return pd.DataFrame(pca.transform(df), columns=["col1", "col2", "col3"])
 
 
-def get_3d_projection(pca_df: pd.DataFrame) -> dict:
-    """A 3D Projection Of Data In The Reduced Dimensionality Space"""
-    return {"x": pca_df["col1"], "y": pca_df["col2"], "z": pca_df["col3"]}
-
-
 def get_best_k_cluster(pca_df: pd.DataFrame) -> pd.DataFrame:
 
     fig = plt.figure(figsize=(10, 8))
@@ -62,7 +57,6 @@ def segment(config: DictConfig) -> None:
 
     data = pd.read_csv(
         to_absolute_path(config.intermediate.path),
-        index_col=0,
     )
 
     pca = get_pca_model(data)

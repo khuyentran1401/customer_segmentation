@@ -1,4 +1,3 @@
-import os
 import pickle
 
 import bentoml
@@ -34,10 +33,8 @@ def predict(customer: JSON(pydantic_model=Customer)) -> np.ndarray:
 
     # Process data
     scaler = pickle.load(open("processors/scaler.pkl", "rb"))
-    print(df.shape[1])
-    print(scaler.n_features_in_)
 
-    scaled_df = scaler.transform(df)
+    scaled_df = pd.DataFrame(scaler.transform(df), columns=df.columns)
 
     pca = pickle.load(open("processors/PCA.pkl", "rb"))
     processed = pd.DataFrame(

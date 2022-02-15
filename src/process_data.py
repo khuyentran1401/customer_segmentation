@@ -61,7 +61,8 @@ def drop_columns_and_rows(df: pd.DataFrame, columns: DictConfig):
 
 
 def get_scaler(df: pd.DataFrame):
-    scaler = SklearnTransformerWrapper(transformer=StandardScaler())
+
+    scaler = StandardScaler()
     scaler.fit(df)
 
     saved_path = to_absolute_path("processors/scaler.pkl")
@@ -70,7 +71,7 @@ def get_scaler(df: pd.DataFrame):
 
 
 def scale_features(df: pd.DataFrame, scaler: SklearnTransformerWrapper):
-    return scaler.transform(df)
+    return pd.DataFrame(scaler.transform(df), columns=df.columns)
 
 
 def process_data(config: DictConfig):
@@ -88,4 +89,5 @@ def process_data(config: DictConfig):
 
     scaler = get_scaler(df)
     df = scale_features(df, scaler)
+
     df.to_csv(to_absolute_path(config.intermediate.path), index=False)
