@@ -51,7 +51,7 @@ Output:
 1
 ```
 
-# Run a Streamlit app
+## Run a Streamlit app
 To open a Streamlit app, run:
 ```bash
 streamlit run src/streamlit_app.py
