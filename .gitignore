@@ -12,3 +12,5 @@ image
 wandb
 .vscode 
 output
+multirun
+.mypy_cache

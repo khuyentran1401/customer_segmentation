@@ -35,16 +35,6 @@ def get_family_size(df: pd.DataFrame, size_map: dict) -> pd.DataFrame:
     )
 
 
-def get_new_features(df: pd.DataFrame, size_map: dict) -> pd.DataFrame:
-    return (
-        df.pipe(get_age)
-        .pipe(get_total_children)
-        .pipe(get_total_purchases)
-        .pipe(get_enrollment_years)
-        .pipe(get_family_size, size_map=size_map)
-    )
-
-
 def drop_features(df: pd.DataFrame, keep_columns: list):
     df = df[keep_columns]
     return df
@@ -56,7 +46,9 @@ def drop_outliers(df: pd.DataFrame, column_threshold: dict):
     return df.reset_index(drop=True)
 
 
-def drop_columns_and_rows(df: pd.DataFrame, keep_columns: list, remove_outliers_threshold: dict):
+def drop_columns_and_rows(
+    df: pd.DataFrame, keep_columns: list, remove_outliers_threshold: dict
+):
     df = df.pipe(drop_features, keep_columns=keep_columns).pipe(
         drop_outliers, column_threshold=remove_outliers_threshold
     )
@@ -83,37 +75,42 @@ def process_data():
     }
 
     keep_columns = [
-            "Income",
-            "Recency",
-            "NumWebVisitsMonth",
-            "AcceptedCmp3",
-            "AcceptedCmp4",
-            "AcceptedCmp5",
-            "AcceptedCmp1",
-            "AcceptedCmp2",
-            "Complain",
-            "Response",
-            "age",
-            "total_purchases",
-            "enrollment_years",
-            "family_size",
-        ]
-        
+        "Income",
+        "Recency",
+        "NumWebVisitsMonth",
+        "AcceptedCmp3",
+        "AcceptedCmp4",
+        "AcceptedCmp5",
+        "AcceptedCmp1",
+        "AcceptedCmp2",
+        "Complain",
+        "Response",
+        "age",
+        "total_purchases",
+        "enrollment_years",
+        "family_size",
+    ]
+
     remove_outliers_threshold = {
-            "age": 90,
-            "Income": 600000,
-        }
-    
+        "age": 90,
+        "Income": 600000,
+    }
 
     df = load_data(
         "data/raw/marketing_campaign.csv",
         {"sep": "\t"},
     )
     df = drop_na(df)
-    df = get_new_features(df, family_size)
-    df = drop_columns_and_rows(df, keep_columns, remove_outliers_threshold)
+    df = get_age(df)
+    df = get_total_children(df)
+    df = get_total_purchases(df)
+    df = get_enrollment_years(df)
+    df = get_family_size(df, family_size)
+    df = drop_columns_and_rows(df, keep_columns)
+    scaler = get_scaler(df)
     df = scale_features(df)
     df.to_csv("data/intermediate/processed.csv")
+
 
 if __name__ == "__main__":
     process_data()
