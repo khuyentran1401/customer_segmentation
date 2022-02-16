@@ -7,9 +7,7 @@ data
 processors
 .DS_Store
 .ipynb_checkpoints
-customer-segmentation-a-AULLE--py3.8
 *-workspace
 .tox
-image
 wandb
 multirun

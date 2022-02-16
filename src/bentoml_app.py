@@ -30,7 +30,6 @@ class Customer(BaseModel):
 @service.api(input=JSON(pydantic_model=Customer), output=NumpyNdarray())
 def predict(customer: Customer) -> np.ndarray:
 
-    print(type(customer))
     df = pd.DataFrame(customer.dict(), index=[0])
 
     # Process data
