@@ -6,6 +6,11 @@ intermediate:
   name: processed.csv
   path: ${intermediate.dir}/${intermediate.name}
 
+final:
+  dir: data/final
+  name: pca.csv
+  path: ${final.dir}/${final.name}
+
 flow: all
 
 columns:

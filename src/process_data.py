@@ -94,6 +94,7 @@ def process_data(config: DictConfig):
     df = get_enrollment_years(df)
     df = get_family_size(df, config.encode.family_size)
     df = drop_columns_and_rows(df, config.columns)
+    df.to_csv(to_absolute_path(config.intermediate.path), index=False)
 
     # Scale data
     scaler = get_scaler(df)
@@ -111,4 +112,4 @@ def process_data(config: DictConfig):
     pca_df = reduce_dimension(df, pca)
 
     # Save processed data
-    pca_df.to_csv(to_absolute_path(config.intermediate.path), index=False)
+    pca_df.to_csv(to_absolute_path(config.final.path), index=False)

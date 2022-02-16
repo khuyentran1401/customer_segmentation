@@ -6,6 +6,8 @@ import streamlit as st
 
 st.title("Customer Segmentation Web App")
 
+# ---------------------------------------------------------------------------- #
+# Get inputs from user
 data = {}
 
 data["Income"] = st.number_input(
@@ -58,7 +60,8 @@ data["family_size"] = st.number_input(
     help="Total number of members in a customer's family",
 )
 
-
+# ---------------------------------------------------------------------------- #
+# Make prediction
 if st.button("Get the cluster of this customer"):
     if not any(math.isnan(v) for v in data.values()):
         data_json = json.dumps(data)

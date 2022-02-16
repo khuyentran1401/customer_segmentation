@@ -1,10 +1,8 @@
 import pickle
 from typing import Tuple
 
-import bentoml
 import bentoml.sklearn
 import matplotlib.pyplot as plt
-import numpy as np
 import pandas as pd
 from hydra.utils import to_absolute_path
 from omegaconf import DictConfig
@@ -28,6 +26,7 @@ def get_best_k_cluster(pca_df: pd.DataFrame) -> pd.DataFrame:
 def get_clusters_model(
     pca_df: pd.DataFrame, k: int
 ) -> Tuple[pd.DataFrame, pd.DataFrame]:
+
     model = KMeans(n_clusters=k)
 
     # Fit model
@@ -41,7 +40,7 @@ def save_model(model):
 def segment(config: DictConfig) -> None:
 
     pca_df = pd.read_csv(
-        to_absolute_path(config.intermediate.path),
+        to_absolute_path(config.final.path),
     )
 
     k_best = get_best_k_cluster(pca_df)
