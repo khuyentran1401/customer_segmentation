@@ -1,10 +1,9 @@
 import pandas as pd
-from feature_engine.wrappers import SklearnTransformerWrapper
 from sklearn.preprocessing import StandardScaler
 
 
-def load_data(data_name: str, load_kwargs: dict) -> pd.DataFrame:
-    return pd.read_csv(data_name, **load_kwargs)
+def load_data(data_name: str) -> pd.DataFrame:
+    return pd.read_csv(data_name)
 
 
 def drop_na(df: pd.DataFrame) -> pd.DataFrame:
@@ -57,8 +56,8 @@ def drop_columns_and_rows(
 
 
 def scale_features(df: pd.DataFrame):
-    scaler = SklearnTransformerWrapper(transformer=StandardScaler())
-    return scaler.fit_transform(df)
+    scaler = StandardScaler()
+    return pd.DataFrame(scaler.fit_transform(df), columns=df.columns)
 
 
 def process_data():
@@ -96,18 +95,14 @@ def process_data():
         "Income": 600000,
     }
 
-    df = load_data(
-        "data/raw/marketing_campaign.csv",
-        {"sep": "\t"},
-    )
+    df = load_data("data/raw/marketing_campaign.csv")
     df = drop_na(df)
     df = get_age(df)
     df = get_total_children(df)
     df = get_total_purchases(df)
     df = get_enrollment_years(df)
     df = get_family_size(df, family_size)
-    df = drop_columns_and_rows(df, keep_columns)
-    scaler = get_scaler(df)
+    df = drop_columns_and_rows(df, keep_columns, remove_outliers_threshold)
     df = scale_features(df)
     df.to_csv("data/intermediate/processed.csv")
 

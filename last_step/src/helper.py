@@ -1,13 +1,17 @@
-import os
-import wandb
+from functools import partial, wraps
+
+import hydra
+import pandas as pd
+from omegaconf import DictConfig, OmegaConf
 from prefect import task
-from functools import wraps, partial
 from prefect.backend.artifacts import create_markdown_artifact
-import pandas as pd  
+
+import wandb
+
 
 def artifact_task(func=None, **task_init_kwargs):
-  
-    if func is None: 
+
+    if func is None:
         return partial(artifact_task, **task_init_kwargs)
 
     @wraps(func)
@@ -17,16 +21,17 @@ def artifact_task(func=None, **task_init_kwargs):
             create_markdown_artifact(res.head(10).to_markdown())
         return res
 
-    safe_func.__name__ = func.__name__
-    
     return task(safe_func, **task_init_kwargs)
 
-def log_data(data_name: str, type: str, dir: str = None) -> None:
-    if dir is None:
-        dir, file = os.path.split(data_name)
-    else:
-        file = data_name
 
-    logged_data = wandb.Artifact(file, type=type)
-    logged_data.add_dir(dir)
-    wandb.log_artifact(logged_data)
+@hydra.main(
+    config_path="../config",
+    config_name="main",
+)
+def initialize_wandb(config: DictConfig):
+    wandb.init(
+        project="customer_segmentation",
+        config=OmegaConf.to_object(config),
+        reinit=True,
+        mode="disabled",
+    )

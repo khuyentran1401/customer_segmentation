@@ -1,32 +1,43 @@
+from datetime import timedelta
 from typing import Tuple
 
+import bentoml
+import bentoml.sklearn
+import hydra
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-from hydra.utils import to_absolute_path
-from omegaconf import DictConfig
+from helper import artifact_task
+from omegaconf import DictConfig, OmegaConf
 from prefect import Flow, task
+from prefect.backend.artifacts import create_markdown_artifact
 from prefect.engine.results import LocalResult
 from prefect.engine.serializers import PandasSerializer
-from sklearn.cluster import (DBSCAN, OPTICS, AffinityPropagation,
-                             AgglomerativeClustering, Birch, KMeans, MeanShift,
-                             SpectralClustering)
+from sklearn.cluster import KMeans
 from sklearn.decomposition import PCA
 from yellowbrick.cluster import KElbowVisualizer
 
 import wandb
-from helper import log_data, artifact_task
 
-OUTPUT_DIR = "data/final/"
-OUTPUT_FILE = "segmented.csv"
+FINAL_OUTPUT = LocalResult(
+    "data/final/",
+    location="{task_name}.csv",
+    serializer=PandasSerializer("csv", serialize_kwargs={"index": False}),
+)
 
 
-@artifact_task
-def reduce_dimension(
-    df: pd.DataFrame, n_components: int, columns: list
-) -> pd.DataFrame:
-    pca = PCA(n_components=n_components)
-    return pd.DataFrame(pca.fit_transform(df), columns=columns)
+@task(result=LocalResult("processors", location="PCA.pkl"))
+def get_pca_model(data: pd.DataFrame) -> PCA:
+    create_markdown_artifact(data.columns)
+
+    pca = PCA(n_components=3)
+    pca.fit(data)
+    return pca
+
+
+@artifact_task(result=FINAL_OUTPUT)
+def reduce_dimension(df: pd.DataFrame, pca: PCA) -> pd.DataFrame:
+    return pd.DataFrame(pca.transform(df), columns=["col1", "col2", "col3"])
 
 
 @task
@@ -36,37 +47,12 @@ def get_3d_projection(pca_df: pd.DataFrame) -> dict:
 
 
 @task
-def create_3d_plot(projection: dict, image_path: str) -> None:
-
-    # To plot
-    fig = plt.figure(figsize=(10, 8))
-    ax = fig.add_subplot(111, projection="3d")
-    ax.scatter(
-        projection["x"],
-        projection["y"],
-        projection["z"],
-        cmap="Accent",
-        marker="o",
-    )
-    ax.set_title("A 3D Projection Of Data In The Reduced Dimension")
-    plt.savefig(image_path)
-
-    # Log plot
-    wandb.log({"pca": wandb.Image(image_path)})
-
-
-@task
-def get_best_k_cluster(
-    pca_df: pd.DataFrame, cluster_config, image_path: str
-) -> pd.DataFrame:
+def get_best_k_cluster(pca_df: pd.DataFrame, image_path: str) -> pd.DataFrame:
 
     fig = plt.figure(figsize=(10, 8))
-    ax = fig.add_subplot(111)
+    fig.add_subplot(111)
 
-    model = eval(cluster_config.algorithm)()
-    elbow = KElbowVisualizer(
-        model, metric=cluster_config.metric
-    )
+    elbow = KElbowVisualizer(KMeans(), metric="distortion")
 
     elbow.fit(pca_df)
     elbow.fig.savefig(image_path)
@@ -85,22 +71,26 @@ def get_best_k_cluster(
 
 
 @task
-def get_clusters(
-    pca_df: pd.DataFrame, algorithm: str, k: int
+def get_clusters_model(
+    pca_df: pd.DataFrame, k: int
 ) -> Tuple[pd.DataFrame, pd.DataFrame]:
-    model = eval(algorithm)(n_clusters=k)
+    model = KMeans(n_clusters=k)
 
-    # Fit model and predict clusters
-    return model.fit_predict(pca_df)
+    # Fit model
+    return model.fit(pca_df)
 
 
-@artifact_task(
-    result=LocalResult(
-        OUTPUT_DIR,
-        location=OUTPUT_FILE,
-        serializer=PandasSerializer("csv"),
-    ),
-)
+@task
+def save_model(model):
+    bentoml.sklearn.save("customer_segmentation_kmeans", model)
+
+
+@task
+def predict(model, pca_df: pd.DataFrame):
+    return model.predict(pca_df)
+
+
+@artifact_task(result=FINAL_OUTPUT)
 def insert_clusters_to_df(
     df: pd.DataFrame, clusters: np.ndarray
 ) -> pd.DataFrame:
@@ -132,42 +122,31 @@ def plot_clusters(
     wandb.log({"clusters": wandb.Image(image_path)})
 
 
+@hydra.main(
+    config_path="../config",
+    config_name="main",
+)
 def segment(config: DictConfig) -> None:
 
-    data_config = config.data_catalog
-    code_config = config.segment
+    with Flow("segmentation") as flow:
 
-    with Flow(
-        "segmentation",
-    ) as flow:
+        data = pd.read_csv(config.intermediate.path)
 
-        data = (
-            LocalResult(
-                dir=to_absolute_path(data_config.intermediate.dir),
-                serializer=PandasSerializer(
-                    "csv",
-                    deserialize_kwargs=data_config.intermediate.deserialize_kwargs,
-                ),
-            )
-            .read(location=data_config.intermediate.name)
-            .value
-        )
+        pca = get_pca_model(data)
 
-        pca_df = reduce_dimension(
-            data, code_config.pca.n_components, code_config.pca.columns
-        )
+        pca_df = reduce_dimension(data, pca)
 
         projections = get_3d_projection(pca_df)
 
-        create_3d_plot(projections, to_absolute_path(code_config.image.pca))
-
         k_best = get_best_k_cluster(
             pca_df,
-            code_config.cluster,
-            to_absolute_path(code_config.image.kmeans),
+            config.image.kmeans,
         )
 
-        preds = get_clusters(pca_df, code_config.cluster.algorithm, k_best)
+        model = get_clusters_model(pca_df, k_best)
+        save_model(model)
+
+        preds = predict(model, pca_df)
 
         data = insert_clusters_to_df(data, preds)
 
@@ -175,14 +154,12 @@ def segment(config: DictConfig) -> None:
             pca_df,
             preds,
             projections,
-            to_absolute_path(code_config.image.clusters),
+            config.image.clusters,
         )
 
     flow.run()
-    flow.register(project_name="customer_segmentation")
-    
-    log_data(
-        data_config.segmented.name,
-        "preprocessed_data",
-        to_absolute_path(data_config.segmented.dir),
-    )
+    # flow.register(project_name="customer_segmentation")
+
+
+if __name__ == "__main__":
+    segment()

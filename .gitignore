@@ -14,3 +14,4 @@ wandb
 output
 multirun
 .mypy_cache
+main.log
