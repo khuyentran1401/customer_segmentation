@@ -11,14 +11,3 @@ repos:
     rev: 5.7.0
     hooks:
     -   id: isort
--   repo: https://github.com/kynan/nbstripout
-    rev: 0.5.0
-    hooks:
-    -   id: nbstripout
-- repo: https://github.com/nbQA-dev/nbQA
-  rev: 0.10.0
-  hooks:
-    - id: nbqa-flake8
-    - id: nbqa-isort
-    - id: nbqa-mypy
-    - id: nbqa-black

@@ -1,14 +1,11 @@
-from datetime import timedelta
 from typing import Tuple
 
-import bentoml
-import bentoml.sklearn
 import hydra
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 from helper import artifact_task
-from omegaconf import DictConfig, OmegaConf
+from omegaconf import DictConfig
 from prefect import Flow, task
 from prefect.backend.artifacts import create_markdown_artifact
 from prefect.engine.results import LocalResult
@@ -19,23 +16,15 @@ from yellowbrick.cluster import KElbowVisualizer
 
 import wandb
 
-FINAL_OUTPUT = LocalResult(
-    "data/final/",
-    location="{task_name}.csv",
-    serializer=PandasSerializer("csv", serialize_kwargs={"index": False}),
-)
 
-
-@task(result=LocalResult("processors", location="PCA.pkl"))
+@task
 def get_pca_model(data: pd.DataFrame) -> PCA:
-    create_markdown_artifact(data.columns)
-
     pca = PCA(n_components=3)
     pca.fit(data)
     return pca
 
 
-@artifact_task(result=FINAL_OUTPUT)
+@artifact_task
 def reduce_dimension(df: pd.DataFrame, pca: PCA) -> pd.DataFrame:
     return pd.DataFrame(pca.transform(df), columns=["col1", "col2", "col3"])
 
@@ -71,30 +60,13 @@ def get_best_k_cluster(pca_df: pd.DataFrame, image_path: str) -> pd.DataFrame:
 
 
 @task
-def get_clusters_model(
+def get_clusters(
     pca_df: pd.DataFrame, k: int
 ) -> Tuple[pd.DataFrame, pd.DataFrame]:
     model = KMeans(n_clusters=k)
 
-    # Fit model
-    return model.fit(pca_df)
-
-
-@task
-def save_model(model):
-    bentoml.sklearn.save("customer_segmentation_kmeans", model)
-
-
-@task
-def predict(model, pca_df: pd.DataFrame):
-    return model.predict(pca_df)
-
-
-@artifact_task(result=FINAL_OUTPUT)
-def insert_clusters_to_df(
-    df: pd.DataFrame, clusters: np.ndarray
-) -> pd.DataFrame:
-    return df.assign(clusters=clusters)
+    # Fit and predict model
+    return model.fit_predict(pca_df)
 
 
 @task
@@ -122,10 +94,7 @@ def plot_clusters(
     wandb.log({"clusters": wandb.Image(image_path)})
 
 
-@hydra.main(
-    config_path="../config",
-    config_name="main",
-)
+@hydra.main("../config", config_name="main")
 def segment(config: DictConfig) -> None:
 
     with Flow("segmentation") as flow:
@@ -138,24 +107,10 @@ def segment(config: DictConfig) -> None:
 
         projections = get_3d_projection(pca_df)
 
-        k_best = get_best_k_cluster(
-            pca_df,
-            config.image.kmeans,
-        )
+        k_best = get_best_k_cluster(pca_df, image_path=config.image.kmeans)
+        preds = get_clusters(pca_df, k_best)
 
-        model = get_clusters_model(pca_df, k_best)
-        save_model(model)
-
-        preds = predict(model, pca_df)
-
-        data = insert_clusters_to_df(data, preds)
-
-        plot_clusters(
-            pca_df,
-            preds,
-            projections,
-            config.image.clusters,
-        )
+        plot_clusters(pca_df, preds, projections, config.image.clusters)
 
     flow.run()
     # flow.register(project_name="customer_segmentation")

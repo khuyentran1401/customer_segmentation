@@ -9,9 +9,6 @@ from sklearn.cluster import KMeans
 from sklearn.decomposition import PCA
 from yellowbrick.cluster import KElbowVisualizer
 
-OUTPUT_DIR = "data/final/"
-OUTPUT_FILE = "segmented.csv"
-
 
 def get_pca_model(data: pd.DataFrame) -> PCA:
 

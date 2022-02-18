@@ -11,3 +11,4 @@
 ## Disadvantages
 * Difficult to understand the relationships between functions
 * Difficult to know which functions are being executed
+* Cannot check the outputs of a function
