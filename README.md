@@ -17,5 +17,4 @@
 2. Set up the environment:
 ```bash
 make setup
-bash activate_env.sh
 ```

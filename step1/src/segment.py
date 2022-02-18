@@ -6,7 +6,7 @@ import pandas as pd
 from sklearn.cluster import KMeans
 from sklearn.decomposition import PCA
 from yellowbrick.cluster import KElbowVisualizer
-
+import os 
 
 def get_pca_model(data: pd.DataFrame) -> PCA:
 
@@ -31,6 +31,8 @@ def get_best_k_cluster(pca_df: pd.DataFrame, image_path: str) -> pd.DataFrame:
 
     elbow = KElbowVisualizer(KMeans(), metric="distortion")
     elbow.fit(pca_df)
+
+    os.makedirs('image', exist_ok=True)
     elbow.fig.savefig(image_path)
 
     k_best = elbow.elbow_value_

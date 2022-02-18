@@ -10,7 +10,7 @@
 * Version the flow, which enables to go back and forth between different versions
 
 ## Disadvantages
-
+* Cannot observe the outputs of each task
 
 ## How to Run Code in This Step
 ### Run Prefect Locally
@@ -34,7 +34,7 @@ $ prefect agent local start
 ```
 Then add:
 ```python
-flow.register(project_name="Iris Project")
+flow.register(project_name="customer_segmentation")
 ```
 at the end of the files `process_data.py` and `segment.py`.
 

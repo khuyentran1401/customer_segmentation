@@ -5,11 +5,14 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 from omegaconf import DictConfig
+from prefect import Flow, task
 from sklearn.cluster import KMeans
 from sklearn.decomposition import PCA
 from yellowbrick.cluster import KElbowVisualizer
+from datetime import timedelta
 import os 
 
+@task(cache_for=timedelta(hours=1))
 def get_pca_model(data: pd.DataFrame) -> PCA:
 
     pca = PCA(n_components=3)
@@ -17,15 +20,18 @@ def get_pca_model(data: pd.DataFrame) -> PCA:
     return pca
 
 
+@task(cache_for=timedelta(hours=1))
 def reduce_dimension(df: pd.DataFrame, pca: PCA) -> pd.DataFrame:
     return pd.DataFrame(pca.transform(df), columns=["col1", "col2", "col3"])
 
 
+@task
 def get_3d_projection(pca_df: pd.DataFrame) -> dict:
     """A 3D Projection Of Data In The Reduced Dimensionality Space"""
     return {"x": pca_df["col1"], "y": pca_df["col2"], "z": pca_df["col3"]}
 
 
+@task
 def get_best_k_cluster(pca_df: pd.DataFrame, image_path: str) -> pd.DataFrame:
 
     fig = plt.figure(figsize=(10, 8))
@@ -42,6 +48,7 @@ def get_best_k_cluster(pca_df: pd.DataFrame, image_path: str) -> pd.DataFrame:
     return k_best
 
 
+@task
 def get_clusters(
     pca_df: pd.DataFrame, k: int
 ) -> Tuple[pd.DataFrame, pd.DataFrame]:
@@ -51,6 +58,7 @@ def get_clusters(
     return model.fit_predict(pca_df)
 
 
+@task
 def plot_clusters(
     pca_df: pd.DataFrame, preds: np.ndarray, projections: dict, image_path: str
 ) -> None:
@@ -75,16 +83,21 @@ def plot_clusters(
 @hydra.main(config_path="../config", config_name="main")
 def segment(config: DictConfig) -> None:
 
-    data = pd.read_csv(config.intermediate.path)
-    pca = get_pca_model(data)
-    pca_df = reduce_dimension(data, pca)
+    with Flow("segmentation") as flow:
+        data = pd.read_csv(config.intermediate.path)
+        pca = get_pca_model(data)
+        pca_df = reduce_dimension(data, pca)
 
-    projections = get_3d_projection(pca_df)
+        projections = get_3d_projection(pca_df)
 
-    k_best = get_best_k_cluster(pca_df, image_path=config.image.kmeans)
-    preds = get_clusters(pca_df, k_best)
+        k_best = get_best_k_cluster(pca_df, image_path=config.image.kmeans)
+        preds = get_clusters(pca_df, k_best)
 
-    plot_clusters(pca_df, preds, projections, image_path=config.image.clusters)
+        plot_clusters(
+            pca_df, preds, projections, image_path=config.image.clusters
+        )
+    # flow.run()
+    flow.register(project_name="customer_segmentation")
 
 
 if __name__ == "__main__":

@@ -72,7 +72,7 @@ def drop_columns_and_rows(
     )
 
 
-@task(result=INTERMEDIATE_OUTPUT)
+@task
 def scale_features(df: pd.DataFrame):
     scaler = StandardScaler()
     return pd.DataFrame(scaler.fit_transform(df), columns=df.columns)
@@ -81,7 +81,7 @@ def scale_features(df: pd.DataFrame):
 @hydra.main(config_path="../config", config_name="main")
 def process_data(config: DictConfig):
 
-    with Flow("process_data") as flow:
+    with Flow("process_data", result=INTERMEDIATE_OUTPUT) as flow:
 
         process_config = config.process
 
