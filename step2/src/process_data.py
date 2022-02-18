@@ -1,47 +1,45 @@
+import hydra
 import pandas as pd
-from feature_engine.wrappers import SklearnTransformerWrapper
+from omegaconf import DictConfig
 from sklearn.preprocessing import StandardScaler
-from prefect import Flow, task, Parameter
-from prefect.engine.results import LocalResult
-from prefect.engine.serializers import PandasSerializer
-
-@task
-def load_data(data_name: str, load_kwargs: dict) -> pd.DataFrame:
-    df = pd.read_csv(data_name, **load_kwargs)
-    return df
 
 
-@task
+def load_data(data_name: str) -> pd.DataFrame:
+    return pd.read_csv(data_name)
+
+
 def drop_na(df: pd.DataFrame) -> pd.DataFrame:
     return df.dropna()
 
-@task
+
 def get_age(df: pd.DataFrame) -> pd.DataFrame:
     return df.assign(age=df["Year_Birth"].apply(lambda row: 2021 - row))
 
-@task
+
 def get_total_children(df: pd.DataFrame) -> pd.DataFrame:
     return df.assign(total_children=df["Kidhome"] + df["Teenhome"])
 
-@task
+
 def get_total_purchases(df: pd.DataFrame) -> pd.DataFrame:
     purchases_columns = df.filter(like="Purchases", axis=1).columns
     return df.assign(total_purchases=df[purchases_columns].sum(axis=1))
 
-@task
+
 def get_enrollment_years(df: pd.DataFrame) -> pd.DataFrame:
     df["Dt_Customer"] = pd.to_datetime(df["Dt_Customer"])
     return df.assign(enrollment_years=2022 - df["Dt_Customer"].dt.year)
 
-@task
+
 def get_family_size(df: pd.DataFrame, size_map: dict) -> pd.DataFrame:
     return df.assign(
         family_size=df["Marital_Status"].map(size_map) + df["total_children"]
     )
 
+
 def drop_features(df: pd.DataFrame, keep_columns: list):
     df = df[keep_columns]
     return df
+
 
 def drop_outliers(df: pd.DataFrame, column_threshold: dict):
     for col, threshold in column_threshold.items():
@@ -49,96 +47,38 @@ def drop_outliers(df: pd.DataFrame, column_threshold: dict):
     return df.reset_index(drop=True)
 
 
-@task
 def drop_columns_and_rows(
     df: pd.DataFrame, keep_columns: list, remove_outliers_threshold: dict
 ):
-    df = df.pipe(drop_features, keep_columns=keep_columns).pipe(
+    return df.pipe(drop_features, keep_columns=keep_columns).pipe(
         drop_outliers, column_threshold=remove_outliers_threshold
     )
 
-    return df
 
-
-@task
 def scale_features(df: pd.DataFrame):
-    scaler = SklearnTransformerWrapper(transformer=StandardScaler())
-    return scaler.fit_transform(df)
+    scaler = StandardScaler()
+    return pd.DataFrame(scaler.fit_transform(df), columns=df.columns)
 
 
-def process_data():
+@hydra.main(config_path="../config", config_name="main")
+def process_data(config: DictConfig):
 
-    # Create a flow
-    with Flow(
-        "process_data",
-        result=LocalResult(
-            "data/intermediate",
-            location="processed.csv",
-            serializer=PandasSerializer("csv"),
-        ),
-    ) as flow:
+    process_config = config.process
 
-        # ---------------------------------------------------------------------------- #
-        # Define parameters
-        family_size = Parameter(
-            "family_size",
-            default={
-                "Married": 2,
-                "Together": 2,
-                "Absurd": 1,
-                "Widow": 1,
-                "YOLO": 1,
-                "Divorced": 1,
-                "Single": 1,
-                "Alone": 1,
-            },
-        )
-
-        keep_columns = Parameter(
-            "keep_columns",
-            default=[
-                "Income",
-                "Recency",
-                "NumWebVisitsMonth",
-                "AcceptedCmp3",
-                "AcceptedCmp4",
-                "AcceptedCmp5",
-                "AcceptedCmp1",
-                "AcceptedCmp2",
-                "Complain",
-                "Response",
-                "age",
-                "total_purchases",
-                "enrollment_years",
-                "family_size",
-            ],
-        )
-
-        remove_outliers_threshold = Parameter(
-            "remove_outliers_threshold",
-            default={
-                "age": 90,
-                "Income": 600000,
-            },
-        )
-
-        # ---------------------------------------------------------------------------- #
-        # Define tasks
-        df = load_data(
-            "data/raw/marketing_campaign.csv",
-            {"sep": "\t"},
-        )
-        df = drop_na(df)
-        df = get_age(df)
-        df = get_total_children(df)
-        df = get_total_purchases(df)
-        df = get_enrollment_years(df)
-        df = get_family_size(df, family_size)
-        df = drop_columns_and_rows(df, keep_columns, remove_outliers_threshold)
-        df = scale_features(df)
-
-    # flow.run()
-    flow.register(project_name="Customer segmentation")
+    df = load_data(config.raw_data.path)
+    df = drop_na(df)
+    df = get_age(df)
+    df = get_total_children(df)
+    df = get_total_purchases(df)
+    df = get_enrollment_years(df)
+    df = get_family_size(df, process_config.family_size)
+    df = drop_columns_and_rows(
+        df,
+        process_config.keep_columns,
+        process_config.remove_outliers_threshold,
+    )
+    df = scale_features(df)
+    df.to_csv(config.intermediate.path, index=False)
 
 
 if __name__ == "__main__":

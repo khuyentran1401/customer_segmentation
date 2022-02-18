@@ -48,11 +48,9 @@ def drop_outliers(df: pd.DataFrame, column_threshold: dict):
 def drop_columns_and_rows(
     df: pd.DataFrame, keep_columns: list, remove_outliers_threshold: dict
 ):
-    df = df.pipe(drop_features, keep_columns=keep_columns).pipe(
+    return df.pipe(drop_features, keep_columns=keep_columns).pipe(
         drop_outliers, column_threshold=remove_outliers_threshold
     )
-
-    return df
 
 
 def scale_features(df: pd.DataFrame):
@@ -104,7 +102,7 @@ def process_data():
     df = get_family_size(df, family_size)
     df = drop_columns_and_rows(df, keep_columns, remove_outliers_threshold)
     df = scale_features(df)
-    df.to_csv("data/intermediate/processed.csv")
+    df.to_csv("data/intermediate/processed.csv", index=False)
 
 
 if __name__ == "__main__":

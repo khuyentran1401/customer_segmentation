@@ -1,0 +1,28 @@
+hydra:  
+  output_subdir: null  
+  run:  
+    dir: .
+    
+defaults:
+  - process: process_2
+
+raw_data: 
+  path: data/raw/marketing_campaign.csv
+
+intermediate:
+  dir: data/intermediate
+  name: scale_features.csv
+  path: ${intermediate.dir}/${intermediate.name}
+
+segmented:
+  dir: data/final
+  name: segmented.csv
+  path: ${segmented.dir}/${segmented.name}
+  deserialize_kwargs:
+    index: false
+
+flow: all 
+
+image:
+  kmeans: image/elbow.png
+  clusters: image/cluster.png

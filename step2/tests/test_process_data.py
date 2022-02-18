@@ -1,6 +1,5 @@
 import pandas as pd
 from pandas.testing import assert_frame_equal
-
 from src.process_data import (get_age, get_enrollment_years, get_family_size,
                               get_total_purchases, scale_features)
 
@@ -36,7 +35,7 @@ def test_scale_features():
     df = pd.DataFrame(
         {"FirstPurchases": [1, 2, 5], "SecondPurchases": [3, 4, 7]}
     )
-    out = scale_features.run(df)
+    out = scale_features(df)
     assert_frame_equal(
         out,
         pd.DataFrame(

@@ -1,62 +1,40 @@
 from typing import Tuple
 
+import hydra
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
+from omegaconf import DictConfig
+from sklearn.cluster import KMeans
 from sklearn.decomposition import PCA
 from yellowbrick.cluster import KElbowVisualizer
-from prefect import Flow, task, Parameter
-from prefect.engine.results import LocalResult
-from prefect.engine.serializers import PandasSerializer
 
 OUTPUT_DIR = "data/final/"
 OUTPUT_FILE = "segmented.csv"
 
 
-@task
-def reduce_dimension(
-    df: pd.DataFrame, n_components: int, columns: list
-) -> pd.DataFrame:
-    pca = PCA(n_components=n_components)
-    return pd.DataFrame(pca.fit_transform(df), columns=columns)
+def get_pca_model(data: pd.DataFrame) -> PCA:
+
+    pca = PCA(n_components=3)
+    pca.fit(data)
+    return pca
 
 
-@task
+def reduce_dimension(df: pd.DataFrame, pca: PCA) -> pd.DataFrame:
+    return pd.DataFrame(pca.transform(df), columns=["col1", "col2", "col3"])
+
+
 def get_3d_projection(pca_df: pd.DataFrame) -> dict:
     """A 3D Projection Of Data In The Reduced Dimensionality Space"""
     return {"x": pca_df["col1"], "y": pca_df["col2"], "z": pca_df["col3"]}
 
 
-@task
-def create_3d_plot(projection: dict, image_path: str) -> None:
-
-    # To plot
-    fig = plt.figure(figsize=(10, 8))
-    ax = fig.add_subplot(111, projection="3d")
-    ax.scatter(
-        projection["x"],
-        projection["y"],
-        projection["z"],
-        cmap="Accent",
-        marker="o",
-    )
-    ax.set_title("A 3D Projection Of Data In The Reduced Dimension")
-    plt.savefig(image_path)
-
-
-@task
-def get_best_k_cluster(
-    pca_df: pd.DataFrame, cluster_config: Parameter, image_path: str
-) -> pd.DataFrame:
-
-    from sklearn.cluster import AgglomerativeClustering, KMeans, SpectralClustering
+def get_best_k_cluster(pca_df: pd.DataFrame, image_path: str) -> pd.DataFrame:
 
     fig = plt.figure(figsize=(10, 8))
-    ax = fig.add_subplot(111)
+    fig.add_subplot(111)
 
-    model = eval(cluster_config["algorithm"])()
-    elbow = KElbowVisualizer(model, metric=cluster_config["metric"])
-
+    elbow = KElbowVisualizer(KMeans(), metric="distortion")
     elbow.fit(pca_df)
     elbow.fig.savefig(image_path)
 
@@ -65,34 +43,15 @@ def get_best_k_cluster(
     return k_best
 
 
-@task
 def get_clusters(
-    pca_df: pd.DataFrame, cluster_config: Parameter, k: int
+    pca_df: pd.DataFrame, k: int
 ) -> Tuple[pd.DataFrame, pd.DataFrame]:
+    model = KMeans(n_clusters=k)
 
-    from sklearn.cluster import AgglomerativeClustering, KMeans, SpectralClustering
-
-    algorithm = cluster_config["algorithm"]
-    model = eval(algorithm)(n_clusters=k)
-
-    # Fit model and predict clusters
+    # Fit and predict model
     return model.fit_predict(pca_df)
 
 
-@task(
-    result=LocalResult(
-        OUTPUT_DIR,
-        location=OUTPUT_FILE,
-        serializer=PandasSerializer("csv"),
-    ),
-)
-def insert_clusters_to_df(
-    df: pd.DataFrame, clusters: np.ndarray
-) -> pd.DataFrame:
-    df = df.assign(clusters=clusters)
-    df.to_csv(OUTPUT_DIR + OUTPUT_FILE)
-
-@task
 def plot_clusters(
     pca_df: pd.DataFrame, preds: np.ndarray, projections: dict, image_path: str
 ) -> None:
@@ -114,53 +73,19 @@ def plot_clusters(
     plt.savefig(image_path)
 
 
-def segment() -> None:
+@hydra.main(config_path="../config", config_name="main")
+def segment(config: DictConfig) -> None:
 
-    # Create a flow
-    with Flow(
-        "segmentation",
-    ) as flow:
+    data = pd.read_csv(config.intermediate.path)
+    pca = get_pca_model(data)
+    pca_df = reduce_dimension(data, pca)
 
-        # ---------------------------------------------------------------------------- #
-        # Define parameters
+    projections = get_3d_projection(pca_df)
 
-        cluster_config = Parameter('cluster_config', default={
-                "k": 10,
-                "metric": "distortion",
-                "algorithm": "KMeans",
-            })
+    k_best = get_best_k_cluster(pca_df, image_path=config.image.kmeans)
+    preds = get_clusters(pca_df, k_best)
 
-        # ---------------------------------------------------------------------------- #
-        # Define tasks
-        data = pd.read_csv("data/intermediate/processed.csv", index_col=0)
-
-        pca_df = reduce_dimension(
-            data, n_components=3, columns=["col1", "col2", "col3"]
-        )
-
-        projections = get_3d_projection(pca_df)
-
-        create_3d_plot(projections, image_path="image/3d_projection.png")
-
-        k_best = get_best_k_cluster(
-            pca_df,
-            cluster_config=cluster_config,
-            image_path="image/elbow.png",
-        )
-
-        preds = get_clusters(pca_df, cluster_config=cluster_config, k=k_best)
-
-        data = insert_clusters_to_df(data, clusters=preds)
-
-        plot_clusters(
-            pca_df,
-            preds,
-            projections,
-            image_path="image/cluster.png",
-        )
-
-    # flow.run()
-    flow.register(project_name="Customer segmentation")
+    plot_clusters(pca_df, preds, projections, image_path=config.image.clusters)
 
 
 if __name__ == "__main__":

@@ -73,7 +73,7 @@ def plot_clusters(
 
 def segment() -> None:
 
-    data = pd.read_csv("data/intermediate/processed.csv", index_col=0)
+    data = pd.read_csv("data/intermediate/processed.csv")
     pca = get_pca_model(data)
     pca_df = reduce_dimension(data, pca)
 
