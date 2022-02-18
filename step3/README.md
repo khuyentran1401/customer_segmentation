@@ -47,3 +47,6 @@ Now run:
 python src/process_data.py
 ```
 to register the `process_data` flow.
+
+## Next step
+Go to [step4](../step4).

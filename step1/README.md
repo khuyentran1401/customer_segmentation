@@ -24,3 +24,6 @@ To segment the data, type:
 ```bash
 $ python src/segment.py
 ```
+
+## Next step
+Go to [step2](../step2).

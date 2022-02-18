@@ -44,5 +44,8 @@ $ python src/segment.py
 ```
 to register the `segment` flow.
 
+## Next step
+Go to [step5](../step5).
+
 
 

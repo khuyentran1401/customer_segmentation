@@ -27,3 +27,6 @@ To process the data using the configuration `process_1`, type:
 ```bash
 $ python src/process_data.py process=process_1
 ```
+
+## Next step
+Go to [step3](../step3).

@@ -18,3 +18,4 @@
 ```bash
 make setup
 ```
+3. Start with [step0](./step0).
