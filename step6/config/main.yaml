@@ -1,0 +1,26 @@
+hydra:  
+  output_subdir: null  
+  run:  
+    dir: .
+    
+defaults:
+  - process: process_2
+
+raw_data: 
+  path: data/raw/marketing_campaign.csv
+
+intermediate:
+  dir: data/intermediate
+  name: scale_features.csv
+  path: ${intermediate.dir}/${intermediate.name}
+
+flow: all 
+
+image:
+  kmeans: image/elbow.png
+  clusters: image/cluster.png
+
+models:
+  scaler: models/scaler.pkl
+  pca: models/pca.pkl
+  cluster: models/cluster.pkl

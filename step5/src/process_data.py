@@ -1,13 +1,10 @@
 import hydra
 import pandas as pd
-from helper import artifact_task
 from omegaconf import DictConfig
 from prefect import Flow, task
 from prefect.engine.results import LocalResult
 from prefect.engine.serializers import PandasSerializer
 from sklearn.preprocessing import StandardScaler
-
-import wandb
 
 INTERMEDIATE_OUTPUT = LocalResult(
     "data/intermediate/",
@@ -16,40 +13,39 @@ INTERMEDIATE_OUTPUT = LocalResult(
 )
 
 
-@artifact_task
+@task
 def load_data(data_name: str) -> pd.DataFrame:
-    data = pd.read_csv(data_name)
-    return data
+    return pd.read_csv(data_name)
 
 
-@artifact_task
+@task
 def drop_na(df: pd.DataFrame) -> pd.DataFrame:
     return df.dropna()
 
 
-@artifact_task
+@task
 def get_age(df: pd.DataFrame) -> pd.DataFrame:
     return df.assign(age=df["Year_Birth"].apply(lambda row: 2021 - row))
 
 
-@artifact_task
+@task
 def get_total_children(df: pd.DataFrame) -> pd.DataFrame:
     return df.assign(total_children=df["Kidhome"] + df["Teenhome"])
 
 
-@artifact_task
+@task
 def get_total_purchases(df: pd.DataFrame) -> pd.DataFrame:
     purchases_columns = df.filter(like="Purchases", axis=1).columns
     return df.assign(total_purchases=df[purchases_columns].sum(axis=1))
 
 
-@artifact_task
+@task
 def get_enrollment_years(df: pd.DataFrame) -> pd.DataFrame:
     df["Dt_Customer"] = pd.to_datetime(df["Dt_Customer"])
     return df.assign(enrollment_years=2022 - df["Dt_Customer"].dt.year)
 
 
-@artifact_task
+@task
 def get_family_size(df: pd.DataFrame, size_map: dict) -> pd.DataFrame:
     return df.assign(
         family_size=df["Marital_Status"].map(size_map) + df["total_children"]
@@ -67,24 +63,21 @@ def drop_outliers(df: pd.DataFrame, column_threshold: dict):
     return df.reset_index(drop=True)
 
 
-@artifact_task(result=INTERMEDIATE_OUTPUT)
+@task
 def drop_columns_and_rows(
-    df: pd.DataFrame, columns: DictConfig
-) -> pd.DataFrame:
-    return df.pipe(drop_features, keep_columns=columns.keep).pipe(
-        drop_outliers, column_threshold=columns.remove_outliers_threshold
+    df: pd.DataFrame, keep_columns: list, remove_outliers_threshold: dict
+):
+    return df.pipe(drop_features, keep_columns=keep_columns).pipe(
+        drop_outliers, column_threshold=remove_outliers_threshold
     )
 
-
-@task(result=LocalResult("processors", location="scaler.pkl"))
+@task(result=LocalResult("models/", location="scaler.pkl"))
 def get_scaler(df: pd.DataFrame):
     scaler = StandardScaler()
     scaler.fit(df)
-
     return scaler
 
-
-@artifact_task(result=INTERMEDIATE_OUTPUT)
+@task(result=INTERMEDIATE_OUTPUT)
 def scale_features(df: pd.DataFrame, scaler: StandardScaler):
     return pd.DataFrame(scaler.transform(df), columns=df.columns)
 
@@ -93,21 +86,25 @@ def scale_features(df: pd.DataFrame, scaler: StandardScaler):
 def process_data(config: DictConfig):
 
     with Flow("process_data") as flow:
+
+        process_config = config.process
+
         df = load_data(config.raw_data.path)
         df = drop_na(df)
         df = get_age(df)
         df = get_total_children(df)
         df = get_total_purchases(df)
         df = get_enrollment_years(df)
-        df = get_family_size(df, config.process.encode.family_size)
-        df = drop_columns_and_rows(df, config.process.columns)
+        df = get_family_size(df, process_config.family_size)
+        df = drop_columns_and_rows(
+            df,
+            process_config.keep_columns,
+            process_config.remove_outliers_threshold,
+        )
         scaler = get_scaler(df)
         df = scale_features(df, scaler)
 
     flow.run()
-    # flow.register(project_name="customer_segmentation")
-
-    wandb.config.update({"num_cols": len(config.process.columns.keep)})
 
 
 if __name__ == "__main__":

@@ -12,3 +12,18 @@
 * Difficult to understand the relationships between functions
 * Difficult to know which functions are being executed
 * Cannot check the outputs of a function
+
+## How to Run Code in This Step
+Go to the `step2` directory:
+```bash
+$ cd step1
+```
+To process the data using the default configurations, type:
+```bash
+$ python src/process_data.py
+```
+
+To process the data using the configuration `process_1`, type:
+```bash
+$ python src/process_data.py process=process_1
+```

@@ -1,4 +1,4 @@
-# Step 3
+# Step 4
 
 ## Changes
 * Save all outputs in `process_data.py` locally
@@ -10,13 +10,17 @@
 
 ## Disadvantages
 * Difficult to compare the outputs of different experiments
-* Cannot reuse the transformers and models of the experiment with the best result
+* Cannot reproduce a particular experiment
 
 ## How to Run Code in This Step
 ### Run Prefect Locally
+Go to the `step4` directory:
+```bash
+$ cd step4
+```
 To process the data, type:
 ```bash
-python src/process_data.py
+$ python src/process_data.py
 ```
 
 ### Run Prefect Cloud
@@ -36,7 +40,7 @@ at the end of the files `segment.py`.
 
 Now run:
 ```bash
-python src/segment.py
+$ python src/segment.py
 ```
 to register the `segment` flow.
 

@@ -16,3 +16,5 @@ multirun
 .mypy_cache
 main.log
 *.log
+models
+artifacts

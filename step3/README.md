@@ -14,15 +14,19 @@
 
 ## How to Run Code in This Step
 ### Run Prefect Locally
+Go to the `step3` directory:
+```bash
+$ cd step3
+```
+
 To process the data, type:
 ```bash
-python src/process_data.py
+$ python src/process_data.py
 ```
 To segment the data, type:
 ```bash
 python src/segment.py
 ```
-
 ### Run Prefect Cloud
 Start with creating a project on Prefect by running:
 ```bash

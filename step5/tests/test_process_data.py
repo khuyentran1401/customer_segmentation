@@ -1,6 +1,5 @@
 import pandas as pd
 from pandas.testing import assert_frame_equal
-
 from src.process_data import (get_age, get_enrollment_years, get_family_size,
                               get_total_purchases, scale_features)
 
@@ -8,21 +7,21 @@ from src.process_data import (get_age, get_enrollment_years, get_family_size,
 def test_get_age():
     df = pd.DataFrame({"Year_Birth": [1999, 2000]})
     assert_frame_equal(
-        get_age(df),
+        get_age.run(df),
         pd.DataFrame({"Year_Birth": [1999, 2000], "age": [22, 21]}),
     )
 
 
 def test_get_total_purchases():
     df = pd.DataFrame({"FirstPurchases": [1, 2], "SecondPurchases": [3, 4]})
-    out = get_total_purchases(df)
+    out = get_total_purchases.run(df)
     assert out["total_purchases"].tolist() == [4, 6]
 
 
 def test_get_enrollment_years():
     df = pd.DataFrame({"Dt_Customer": ["04-09-2012"]})
     assert_frame_equal(
-        get_enrollment_years(df),
+        get_enrollment_years.run(df),
         pd.DataFrame(
             {
                 "Dt_Customer": [pd.Timestamp("2012-04-09 00:00:00")],
@@ -57,7 +56,7 @@ def test_get_family_size():
         }
     )
     assert_frame_equal(
-        get_family_size(df, {"Married": 2, "Absurd": 1, "Single": 1}),
+        get_family_size.run(df, {"Married": 2, "Absurd": 1, "Single": 1}),
         pd.DataFrame(
             {
                 "Marital_Status": ["Married", "Absurd", "Single"],
