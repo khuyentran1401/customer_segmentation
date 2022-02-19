@@ -13,9 +13,13 @@
 * `data`: consists of data
 
 ## How to Run the Project
-1. Install [Poetry](https://python-poetry.org/docs/#installation)
-2. Set up the environment:
+1. Clone this branch:
+```bash
+git clone --branch workshop https://github.com/khuyentran1401/customer_segmentation.git
+```
+2. Install [Poetry](https://python-poetry.org/docs/#installation)
+3. Set up the environment:
 ```bash
 make setup
 ```
-3. Start with [step0](./step0).
+4. Start with [step0](./step0).
