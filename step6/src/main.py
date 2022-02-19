@@ -10,7 +10,6 @@ def main(config: DictConfig):
     wandb.init(
         project="customer_segmentation",
         config=OmegaConf.to_object(config),
-        reinit=True,
     )
 
     if config.flow == "all":

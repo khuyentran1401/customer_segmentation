@@ -99,8 +99,8 @@ def process_data(config: DictConfig):
         )
         df = scale_features(df)
 
-    flow.run()
-    # flow.register(project_name="customer_segmentation")
+    # flow.run()
+    flow.register(project_name="customer_segmentation")
 
 
 if __name__ == "__main__":

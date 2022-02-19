@@ -6,7 +6,7 @@ from omegaconf import DictConfig, OmegaConf
 def process_data(config: DictConfig):
 
     print(OmegaConf.to_yaml(config))
-    print(config.pca.n_components)
+    # print(config.process.keep_columns)
 
 
 process_data()

@@ -1,4 +1,4 @@
-# Step 6
+# Step 6: Use Notebooks to Analyze the Output
 
 ## Changes
 * Add a notebook to analyze the output

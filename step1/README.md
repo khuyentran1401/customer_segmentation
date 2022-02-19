@@ -1,4 +1,4 @@
-# Step 1
+# Step 1: Write and Test Your Function​
 
 ## Changes
 * Create functions for code 

@@ -1,4 +1,4 @@
-# Step 2
+# Step 2: Use Configuration Files
 
 ## Changes
 * Replace hard-coding values with a config file

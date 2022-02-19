@@ -1,4 +1,4 @@
-# Step 3
+# Step 3: Visualize and Monitor Your Workflow​
 
 ## Changes
 * Add [Prefect](https://www.prefect.io/) to monitor data pipelines
@@ -7,7 +7,6 @@
 * Understand the relationships between different functions
 * Know which functions are being executed
 * Understand the duration of one function compared to other functions
-* Version the flow, which enables to go back and forth between different versions
 
 ## Disadvantages
 * Cannot observe the outputs of each task

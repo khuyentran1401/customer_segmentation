@@ -1,4 +1,4 @@
-# Step 4
+# Step 4: Persist and Cache Outputs​
 
 ## Changes
 * Save all outputs in `process_data.py` locally
