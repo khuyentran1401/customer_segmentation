@@ -18,7 +18,10 @@ Go to the `step3` directory:
 ```bash
 $ cd step3
 ```
-
+Set Prefect's variable to persist the outputs:
+```bash
+export PREFECT__FLOWS__CHECKPOINTING = true
+```
 To process the data, type:
 ```bash
 $ python src/process_data.py

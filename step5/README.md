@@ -13,6 +13,10 @@ Go to `step5` directory:
 ```bash
 $ cd step5
 ```
+Set Prefect's variable to persist the outputs:
+```bash
+export PREFECT__FLOWS__CHECKPOINTING = true
+```
 Run the entire project using the configuration `process_1`:
 ```bash
 $ python src/main.py process=process_1
