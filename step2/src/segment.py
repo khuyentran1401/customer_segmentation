@@ -9,6 +9,9 @@ from sklearn.cluster import KMeans
 from sklearn.decomposition import PCA
 from yellowbrick.cluster import KElbowVisualizer
 import os 
+import warnings
+warnings.filterwarnings('ignore', '.*UserWarning.*', )
+
 
 def get_pca_model(data: pd.DataFrame) -> PCA:
 

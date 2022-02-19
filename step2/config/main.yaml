@@ -1,3 +1,4 @@
+
 hydra:  
   output_subdir: null  
   run:  
@@ -5,6 +6,7 @@ hydra:
     
 defaults:
   - process: process_2
+  - _self_
 
 raw_data: 
   path: data/raw/marketing_campaign.csv
