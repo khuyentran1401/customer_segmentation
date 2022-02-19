@@ -10,6 +10,7 @@
 
 ## Disadvantages
 * Cannot observe the outputs of each task
+* We might want to cache computationally expensive tasks
 
 ## How to Run Code in This Step
 ### Run Prefect Locally

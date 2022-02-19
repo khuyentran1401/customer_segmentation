@@ -95,8 +95,8 @@ def segment(config: DictConfig) -> None:
         plot_clusters(
             pca_df, preds, projections, image_path=config.image.clusters
         )
-    # flow.run()
-    flow.register(project_name="customer_segmentation")
+    flow.run()
+    # flow.register(project_name="customer_segmentation")
 
 
 if __name__ == "__main__":

@@ -57,7 +57,7 @@ with Flow("predict") as flow:
     run = initialize()
     df = get_data()
     df = scale(run, "v5", df)
-    df = pca(run, "v6", df)
-    pred = predict(run, "v7", df)
+    df = pca(run, "v8", df)
+    pred = predict(run, "v8", df)
 
 flow.run()
