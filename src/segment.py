@@ -4,7 +4,6 @@ from typing import Tuple
 import bentoml.sklearn
 import matplotlib.pyplot as plt
 import pandas as pd
-from hydra.utils import to_absolute_path
 from omegaconf import DictConfig
 from sklearn.cluster import KMeans
 from yellowbrick.cluster import KElbowVisualizer
@@ -39,9 +38,7 @@ def save_model(model):
 
 def segment(config: DictConfig) -> None:
 
-    pca_df = pd.read_csv(
-        to_absolute_path(config.final.path),
-    )
+    pca_df = pd.read_csv(config.final.path)
 
     k_best = get_best_k_cluster(pca_df)
     model = get_clusters_model(pca_df, k_best)

@@ -1,7 +1,5 @@
-import pickle
-
+import bentoml
 import pandas as pd
-from hydra.utils import to_absolute_path
 from omegaconf import DictConfig
 from sklearn.decomposition import PCA
 from sklearn.preprocessing import StandardScaler
@@ -84,9 +82,7 @@ def reduce_dimension(df: pd.DataFrame, pca: PCA) -> pd.DataFrame:
 
 def process_data(config: DictConfig):
 
-    df = load_data(
-        to_absolute_path(config.raw_data.path),
-    )
+    df = load_data(config.raw_data.path)
     df = drop_na(df)
     df = get_age(df)
     df = get_total_children(df)
@@ -94,22 +90,21 @@ def process_data(config: DictConfig):
     df = get_enrollment_years(df)
     df = get_family_size(df, config.encode.family_size)
     df = drop_columns_and_rows(df, config.columns)
-    df.to_csv(to_absolute_path(config.intermediate.path), index=False)
+    df.to_csv(config.intermediate.path, index=False)
 
     # Scale data
     scaler = get_scaler(df)
 
-    saved_path = to_absolute_path("processors/scaler.pkl")
-    pickle.dump(scaler, open(saved_path, "wb"))
+    bentoml.picklable_model.save("scaler", scaler)
 
     df = scale_features(df, scaler)
 
     # Reduce dimension
     pca = get_pca_model(df)
-    save_path = to_absolute_path("processors/PCA.pkl")
-    pickle.dump(pca, open(save_path, "wb"))
+
+    bentoml.picklable_model.save("pca", pca)
 
     pca_df = reduce_dimension(df, pca)
 
     # Save processed data
-    pca_df.to_csv(to_absolute_path(config.final.path), index=False)
+    pca_df.to_csv(config.final.path, index=False)

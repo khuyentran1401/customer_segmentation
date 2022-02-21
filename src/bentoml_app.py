@@ -1,7 +1,4 @@
-import pickle
-
 import bentoml
-import bentoml.sklearn
 import numpy as np
 import pandas as pd
 from bentoml.io import JSON, NumpyNdarray
@@ -33,11 +30,12 @@ def predict(customer: Customer) -> np.ndarray:
     df = pd.DataFrame(customer.dict(), index=[0])
 
     # Process data
-    scaler = pickle.load(open("processors/scaler.pkl", "rb"))
+    scaler = bentoml.picklable_model.load("scaler:latest")
 
     scaled_df = pd.DataFrame(scaler.transform(df), columns=df.columns)
 
-    pca = pickle.load(open("processors/PCA.pkl", "rb"))
+    pca = bentoml.picklable_model.load("pca:latest")
+
     processed = pd.DataFrame(
         pca.transform(scaled_df), columns=["col1", "col2", "col3"]
     )
