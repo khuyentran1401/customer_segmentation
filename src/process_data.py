@@ -1,4 +1,5 @@
-import bentoml
+import pickle
+
 import pandas as pd
 from omegaconf import DictConfig
 from sklearn.decomposition import PCA
@@ -94,15 +95,13 @@ def process_data(config: DictConfig):
 
     # Scale data
     scaler = get_scaler(df)
-
-    bentoml.picklable_model.save("scaler", scaler)
+    pickle.dump(scaler, open("processors/scaler.pkl", "wb"))
 
     df = scale_features(df, scaler)
 
     # Reduce dimension
     pca = get_pca_model(df)
-
-    bentoml.picklable_model.save("pca", pca)
+    pickle.dump(pca, open("processors/PCA.pkl", "wb"))
 
     pca_df = reduce_dimension(df, pca)
 
