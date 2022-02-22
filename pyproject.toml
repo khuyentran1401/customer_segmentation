@@ -21,6 +21,10 @@ streamlit = "^1.5.1"
 pytest = "^6.2.5"
 pre-commit = "^2.17.0"
 
+[virtualenvs]
+create = true
+in-project = true
+
 [build-system]
 requires = ["poetry-core>=1.0.0"]
 build-backend = "poetry.core.masonry.api"
