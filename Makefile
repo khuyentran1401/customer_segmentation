@@ -18,13 +18,12 @@ pull_data:
 	@echo "Pulling data..."
 	poetry run dvc pull
 
-setup: activate install pull_data env
+setup: activate 
+install: install pull_data env
 
 test:
 	pytest
-	
+
 clean: 
 	@echo "Deleting log files..."
 	find . -name "*.log" -type f -not -path "./wandb/*" -delete
-
-	

@@ -13,6 +13,7 @@ This project is the demo of the article [BentoML: Create an ML Powered Predictio
 2. Set up the environment:
 ```bash
 make setup
+make install
 source activate_env.sh
 ```
 ## Run the Project
