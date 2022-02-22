@@ -21,5 +21,6 @@ git clone --branch workshop https://github.com/khuyentran1401/customer_segmentat
 3. Set up the environment:
 ```bash
 make setup
+make install
 ```
 4. Start with [step0](./step0).
