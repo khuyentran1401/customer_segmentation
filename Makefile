@@ -11,15 +11,12 @@ activate:
 	@echo "Activating virtual environment"
 	poetry shell
 
-env:
-	@echo "Please set the environment variable 'PREFECT__FLOWS__CHECKPOINTING=true' to persist the output of Prefect's flow"
-
 pull_data:
 	@echo "Pulling data..."
 	poetry run dvc pull
 
 setup: activate 
-install: install pull_data env
+install_all: install pull_data env
 
 test:
 	pytest
