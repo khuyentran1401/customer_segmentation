@@ -1,7 +1,4 @@
 .PHONY: notebook
-.EXPORT_ALL_VARIABLES:
-
-PREFECT__FLOWS__CHECKPOINTING = true
 
 install: 
 	@echo "Installing..."
@@ -16,7 +13,7 @@ pull_data:
 	poetry run dvc pull
 
 setup: activate 
-install_all: install pull_data env
+install_all: install pull_data 
 
 test:
 	pytest
