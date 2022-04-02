@@ -1,17 +1,27 @@
+import os
 from typing import Tuple
 
 import hydra
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-from omegaconf import DictConfig
+from omegaconf import DictConfig, OmegaConf
 from prefect import Flow, task
+from prefect.engine.results import LocalResult
 from sklearn.cluster import KMeans
 from sklearn.decomposition import PCA
 from yellowbrick.cluster import KElbowVisualizer
-import os 
-from prefect.engine.results import LocalResult
-import wandb 
+
+import wandb
+
+
+@task
+def initialize_wandb(config: DictConfig):
+    wandb.init(
+        project="customer_segmentation",
+        config=OmegaConf.to_object(config),
+    )
+
 
 @task(result=LocalResult("models/", location="pca.pkl"))
 def get_pca_model(data: pd.DataFrame) -> PCA:
@@ -41,7 +51,7 @@ def get_best_k_cluster(pca_df: pd.DataFrame, image_path: str) -> pd.DataFrame:
     elbow = KElbowVisualizer(KMeans(), metric="distortion")
     elbow.fit(pca_df)
 
-    os.makedirs('image', exist_ok=True)
+    os.makedirs("image", exist_ok=True)
     elbow.fig.savefig(image_path)
 
     k_best = elbow.elbow_value_
@@ -65,11 +75,13 @@ def get_cluster_model(
 
     # Fit model
     model.fit(pca_df)
-    return model 
+    return model
 
-@task 
+
+@task
 def get_clusters(pca_df, model: KMeans):
     return model.predict(pca_df)
+
 
 @task
 def plot_clusters(
@@ -94,28 +106,33 @@ def plot_clusters(
 
     # Log plot
     wandb.log({"clusters": wandb.Image(image_path)})
-    
 
-@task 
+
+@task
 def wandb_log(config: DictConfig):
 
     # log models
     models = config.models
 
     for name, path in models.items():
-        wandb.log_artifact(path, name=name, type='model')
-    
+        wandb.log_artifact(path, name=name, type="model")
+
     # log data
-    wandb.log_artifact(config.raw_data.path, name='raw_data', type='data')
-    wandb.log_artifact(config.intermediate.path, name='intermediate_data', type='data')
+    wandb.log_artifact(config.raw_data.path, name="raw_data", type="data")
+    wandb.log_artifact(
+        config.intermediate.path, name="intermediate_data", type="data"
+    )
 
     # log number of columns
     wandb.log({"num_cols": len(config.process.keep_columns)})
+
 
 @hydra.main(config_path="../config", config_name="main")
 def segment(config: DictConfig) -> None:
 
     with Flow("segmentation") as flow:
+        initialize_wandb(config)
+
         data = pd.read_csv(config.intermediate.path)
         pca = get_pca_model(data)
         pca_df = reduce_dimension(data, pca)
@@ -125,7 +142,7 @@ def segment(config: DictConfig) -> None:
         k_best = get_best_k_cluster(pca_df, image_path=config.image.kmeans)
         model = get_cluster_model(pca_df, k_best)
         preds = get_clusters(pca_df, model)
- 
+
         plot_clusters(
             pca_df, preds, projections, image_path=config.image.clusters
         )

@@ -2,15 +2,10 @@ import hydra
 from omegaconf import DictConfig, OmegaConf
 from process_data import process_data
 from segment import segment
-import wandb
 
 
 @hydra.main(config_path="../config", config_name="main")
 def main(config: DictConfig):
-    wandb.init(
-        project="customer_segmentation",
-        config=OmegaConf.to_object(config),
-    )
 
     if config.flow == "all":
         process_data(config)

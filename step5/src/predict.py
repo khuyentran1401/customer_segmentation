@@ -1,8 +1,10 @@
-import pandas as pd
-import wandb
-from prefect import task, Flow
 import pickle
+
 import numpy as np
+import pandas as pd
+from prefect import Flow, task
+
+import wandb
 
 
 @task
@@ -56,8 +58,8 @@ def predict(run, version: str, df: pd.DataFrame) -> np.ndarray:
 with Flow("predict") as flow:
     run = initialize()
     df = get_data()
-    df = scale(run, "v5", df)
-    df = pca(run, "v8", df)
-    pred = predict(run, "v8", df)
+    df = scale(run, "v6", df)
+    df = pca(run, "v12", df)
+    pred = predict(run, "v12", df)
 
 flow.run()
