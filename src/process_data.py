@@ -1,10 +1,9 @@
-import pickle
-
 import pandas as pd
 from omegaconf import DictConfig
 from sklearn.decomposition import PCA
 from sklearn.preprocessing import StandardScaler
-
+import bentoml 
+import hydra    
 
 def load_data(data_name: str) -> pd.DataFrame:
     data = pd.read_csv(data_name)
@@ -80,7 +79,7 @@ def get_pca_model(data: pd.DataFrame) -> PCA:
 def reduce_dimension(df: pd.DataFrame, pca: PCA) -> pd.DataFrame:
     return pd.DataFrame(pca.transform(df), columns=["col1", "col2", "col3"])
 
-
+@hydra.main(config_path="../config", config_name="config")
 def process_data(config: DictConfig):
 
     df = load_data(config.raw_data.path)
@@ -95,15 +94,18 @@ def process_data(config: DictConfig):
 
     # Scale data
     scaler = get_scaler(df)
-    pickle.dump(scaler, open("processors/scaler.pkl", "wb"))
+    bentoml.sklearn.save("scaler", scaler)
 
     df = scale_features(df, scaler)
 
     # Reduce dimension
     pca = get_pca_model(df)
-    pickle.dump(pca, open("processors/PCA.pkl", "wb"))
+    bentoml.sklearn.save("pca", pca)
 
     pca_df = reduce_dimension(df, pca)
 
     # Save processed data
     pca_df.to_csv(config.final.path, index=False)
+
+if __name__ == '__main__':
+    process_data()

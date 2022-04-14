@@ -1,4 +1,3 @@
-import pickle
 from typing import Tuple
 
 import bentoml.sklearn
@@ -7,7 +6,7 @@ import pandas as pd
 from omegaconf import DictConfig
 from sklearn.cluster import KMeans
 from yellowbrick.cluster import KElbowVisualizer
-
+import hydra 
 
 def get_best_k_cluster(pca_df: pd.DataFrame) -> pd.DataFrame:
 
@@ -35,7 +34,7 @@ def get_clusters_model(
 def save_model(model):
     bentoml.sklearn.save("customer_segmentation_kmeans", model)
 
-
+@hydra.main(config_path="../config", config_name="config")
 def segment(config: DictConfig) -> None:
 
     pca_df = pd.read_csv(config.final.path)
@@ -44,3 +43,6 @@ def segment(config: DictConfig) -> None:
     model = get_clusters_model(pca_df, k_best)
 
     save_model(model)
+
+if __name__ == '__main__':
+    segment()
