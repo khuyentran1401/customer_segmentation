@@ -15,8 +15,9 @@ data["Income"] = st.number_input(
     min_value=0,
     step=500,
     value=58138,
-    help="Customer's yearly household income",
+    help="Customer's yearly household income"
 )
+
 data["Recency"] = st.number_input(
     "Recency",
     min_value=0,
@@ -59,16 +60,17 @@ data["family_size"] = st.number_input(
     value=1,
     help="Total number of members in a customer's family",
 )
-
 # ---------------------------------------------------------------------------- #
 # Make prediction
 if st.button("Get the cluster of this customer"):
-    if not any(math.isnan(v) for v in data.values()):
-        data_json = json.dumps(data)
+   if not any(math.isnan(v) for v in data.values()):
+       data_json = json.dumps(data)
 
-        prediction = requests.post(
-            "https://bentoml-her0ku-mty0ndg3mza0ngo.herokuapp.com/predict",
-            headers={"content-type": "application/json"},
-            data=data_json,
-        ).text
-        st.write(f"This customer belongs to the cluster {prediction}")
+       prediction = requests.post(
+           "https://customer-segmentation-kmeans.herokuapp.com/predict",
+           headers={"content-type": "application/json"},
+           data = data_json,
+       ).text 
+
+       st.write(f"This customer belongs to the cluster {prediction}")
+       

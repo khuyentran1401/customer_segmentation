@@ -2,8 +2,9 @@ import pandas as pd
 from omegaconf import DictConfig
 from sklearn.decomposition import PCA
 from sklearn.preprocessing import StandardScaler
-import bentoml 
-import hydra    
+import bentoml
+import hydra
+
 
 def load_data(data_name: str) -> pd.DataFrame:
     data = pd.read_csv(data_name)
@@ -79,6 +80,7 @@ def get_pca_model(data: pd.DataFrame) -> PCA:
 def reduce_dimension(df: pd.DataFrame, pca: PCA) -> pd.DataFrame:
     return pd.DataFrame(pca.transform(df), columns=["col1", "col2", "col3"])
 
+
 @hydra.main(config_path="../config", config_name="config")
 def process_data(config: DictConfig):
 
@@ -107,5 +109,6 @@ def process_data(config: DictConfig):
     # Save processed data
     pca_df.to_csv(config.final.path, index=False)
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     process_data()

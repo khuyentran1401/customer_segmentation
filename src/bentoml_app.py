@@ -1,25 +1,26 @@
 import bentoml
+import bentoml.sklearn
 import numpy as np
 import pandas as pd
-from bentoml.io import JSON, NumpyNdarray
-from pydantic import BaseModel
+from bentoml.io import NumpyNdarray, JSON
+from pydantic import BaseModel 
 
 # Load processors and model
 scaler = bentoml.sklearn.load_runner(
     "scaler:latest", function_name="transform"
 )
 pca = bentoml.sklearn.load_runner("pca:latest", function_name="transform")
-classifier = bentoml.sklearn.load_runner("customer_segmentation_kmeans:latest")
+classifier = bentoml.sklearn.load_runner(
+    "customer_segmentation_kmeans:latest", function_name="predict"
+)
 
 # Create service with the model
 service = bentoml.Service(
     "customer_segmentation_kmeans", runners=[scaler, pca, classifier]
 )
 
-
 class Customer(BaseModel):
-
-    Income: float = 58138
+    Income: float = 53138
     Recency: int = 58
     NumWebVisitsMonth: int = 7
     Complain: int = 0
@@ -28,11 +29,9 @@ class Customer(BaseModel):
     enrollment_years: int = 10
     family_size: int = 1
 
-
-# Create an API function
 @service.api(input=JSON(pydantic_model=Customer), output=NumpyNdarray())
 def predict(customer: Customer) -> np.ndarray:
-
+    
     df = pd.DataFrame(customer.dict(), index=[0])
 
     # Process data
@@ -43,4 +42,4 @@ def predict(customer: Customer) -> np.ndarray:
 
     # Predict
     result = classifier.run(processed)
-    return np.array(result)
+    return np.array(result) 
