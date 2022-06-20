@@ -4,6 +4,9 @@ from sklearn.decomposition import PCA
 from sklearn.preprocessing import StandardScaler
 import bentoml
 import hydra
+import warnings
+
+warnings.filterwarnings("ignore", category=UserWarning)
 
 
 def load_data(data_name: str) -> pd.DataFrame:
@@ -30,7 +33,7 @@ def get_total_purchases(df: pd.DataFrame) -> pd.DataFrame:
 
 
 def get_enrollment_years(df: pd.DataFrame) -> pd.DataFrame:
-    df["Dt_Customer"] = pd.to_datetime(df["Dt_Customer"])
+    df["Dt_Customer"] = pd.to_datetime(df["Dt_Customer"], infer_datetime_format=True)
     return df.assign(enrollment_years=2022 - df["Dt_Customer"].dt.year)
 
 

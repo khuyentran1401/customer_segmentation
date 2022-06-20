@@ -1,23 +1,16 @@
-import bentoml
-import bentoml.sklearn
-import numpy as np
-import pandas as pd
-from bentoml.io import NumpyNdarray, JSON
-from pydantic import BaseModel 
+import bentoml 
+import pandas as pd 
+from bentoml.io import NumpyNdarray, PandasDataFrame, JSON 
+import numpy as np 
+from pydantic import BaseModel
 
-# Load processors and model
-scaler = bentoml.sklearn.load_runner(
-    "scaler:latest", function_name="transform"
-)
+# Load transformers and model
+scaler = bentoml.sklearn.load_runner("scaler:latest", function_name="transform")
 pca = bentoml.sklearn.load_runner("pca:latest", function_name="transform")
-classifier = bentoml.sklearn.load_runner(
-    "customer_segmentation_kmeans:latest", function_name="predict"
-)
 
-# Create service with the model
-service = bentoml.Service(
-    "customer_segmentation_kmeans", runners=[scaler, pca, classifier]
-)
+model = bentoml.sklearn.load_runner("customer_segmentation_kmeans:latest")
+
+service = bentoml.Service("customer_segmentation_kmeans", runners=[scaler, pca, model])
 
 class Customer(BaseModel):
     Income: float = 53138
@@ -30,16 +23,14 @@ class Customer(BaseModel):
     family_size: int = 1
 
 @service.api(input=JSON(pydantic_model=Customer), output=NumpyNdarray())
-def predict(customer: Customer) -> np.ndarray:
+def predict(data: Customer) -> np.array:
+
+    df = pd.DataFrame(data.dict(), index=[0])
     
-    df = pd.DataFrame(customer.dict(), index=[0])
-
     # Process data
-    scaled_df = pd.DataFrame([scaler.run(df)], columns=df.columns)
-    processed = pd.DataFrame(
-        [pca.run(scaled_df)], columns=["col1", "col2", "col3"]
-    )
+    scaled_df  = pd.DataFrame([scaler.run(df)], columns=df.columns)
+    processed_df = pd.DataFrame([pca.run(df)], columns=['col1', 'col2', 'col3'])
 
-    # Predict
-    result = classifier.run(processed)
-    return np.array(result) 
+    # Predict data
+    result = model.run(processed_df)
+    return np.array(result)

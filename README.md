@@ -13,13 +13,21 @@ This project is the demo of the article [BentoML: Create an ML Powered Predictio
 ```bash
 git clone --branch bentoml_demo https://github.com/khuyentran1401/customer_segmentation.git
 ```
-2. Install [Poetry](https://python-poetry.org/docs/#installation)
-3. Set up the environment:
+2. Create and activate a virtual environment:
 ```bash
-make setup
-make install_all
-source activate_env.sh
+python3 -m venv venv
+source venv/bin/activate
 ```
+
+3. Install dependencies
+```bash
+pip install -r requirements.txt
+```
+4. Pull data
+```bash
+dvc pull
+```
+
 ## Run the Project
 To run all flows, type:
 ```bash
