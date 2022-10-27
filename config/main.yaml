@@ -11,16 +11,17 @@ defaults:
 raw_data: 
   path: data/raw/marketing_campaign.csv
 
-intermediate:
-  dir: data/intermediate
-  name: scale_features.csv
-  path: ${intermediate.dir}/${intermediate.name}
+data: 
+  raw: raw
+  intermediate: scale_features
+  segmented: segmented
 
-segmented:
-  dir: data/final
-  name: segmented.csv
-  path: ${segmented.dir}/${segmented.name}
-
+connection:
+  user: postgres
+  password: 123456
+  host: localhost:5432
+  database: customer_segmentation
+  
 flow: all 
 
 pca:

@@ -13,6 +13,6 @@ image/*.png
 wandb
 multirun
 main.log
-.venv
+venv
 /image
 segment.log

@@ -1,19 +1,11 @@
-import hydra
-import wandb
-from omegaconf import DictConfig, OmegaConf
-
 from process_data import process_data
 from segment import segment
+from prefect import flow
 
-
-@hydra.main(
-    config_path="../config",
-    config_name="main",
-)
-def main(config: DictConfig):
-
-    process_data(config)
-    segment(config)
+@flow
+def main():
+    process_data()
+    segment()
 
 
 if __name__ == "__main__":
