@@ -5,16 +5,7 @@ import numpy as np
 import pandas as pd
 from helper import load_config
 from prefect import flow, task
-from sklearn.cluster import (
-    DBSCAN,
-    OPTICS,
-    AffinityPropagation,
-    AgglomerativeClustering,
-    Birch,
-    KMeans,
-    MeanShift,
-    SpectralClustering,
-)
+from sklearn.cluster import KMeans
 from sklearn.decomposition import PCA
 from yellowbrick.cluster import KElbowVisualizer
 from omegaconf import DictConfig
@@ -52,11 +43,6 @@ def get_3d_projection(pca_df: pd.DataFrame) -> dict:
     return {"x": pca_df["col1"], "y": pca_df["col2"], "z": pca_df["col3"]}
 
 
-@task
-def check_has_nclusters(config: DictConfig):
-    args = config.segment.args
-    return args is not None and "n_clusters" in args
-
 
 @task
 def get_best_k_cluster(
@@ -75,30 +61,14 @@ def get_best_k_cluster(
 
 
 @task
-def predict_with_predefined_clusters(
+def predict(
     pca_df: pd.DataFrame, k: int, model: dict
 ) -> Tuple[pd.DataFrame, pd.DataFrame]:
-    """Get model with the parameter `n_clusters`"""
 
     model_args = dict(model.args)
     model_args["n_clusters"] = k
 
-    model = eval(model.algorithm)(**model_args)
-
-    # Predict
-    return model.fit_predict(pca_df)
-
-
-@task
-def predict_without_predefined_clusters(
-    pca_df: pd.DataFrame, model: dict
-) -> Tuple[pd.DataFrame, pd.DataFrame]:
-    """Get model without the parameter `n_clusters`"""
-    if model.args is None:
-        model_args = {}
-    else:
-        model_args = dict(model.args)
-    model = eval(model.algorithm)(**model_args)
+    model = KMeans(**model_args)
 
     # Predict
     return model.fit_predict(pca_df)
@@ -150,14 +120,8 @@ def segment() -> None:
 
     projections = get_3d_projection(pca_df)
 
-    has_nclusters = check_has_nclusters(config)
-
-    if has_nclusters:
-        k_best = get_best_k_cluster(pca_df, config.image.elbow, config.elbow_metric)
-        prediction = predict_with_predefined_clusters(pca_df, k_best, config.segment)
-
-    else:
-        prediction = predict_without_predefined_clusters(pca_df, config.segment)
+    k_best = get_best_k_cluster(pca_df, config.image.elbow, config.elbow_metric)
+    prediction = predict(pca_df, k_best, config.segment)
 
     data = insert_clusters_to_df(data, prediction)
     save_segmented_df(data, config)

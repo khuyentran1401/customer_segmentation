@@ -5,7 +5,7 @@ from prefect import task, flow
 from sklearn.preprocessing import StandardScaler
 
 from helper import load_config
-
+import joblib
 
 @task
 def load_data(config: DictConfig) -> pd.DataFrame:
@@ -73,6 +73,10 @@ def get_scaler(df: pd.DataFrame):
 
     return scaler
 
+@task 
+def save_scaler(scaler: StandardScaler, saved_path: str):
+    joblib.dump(scaler, saved_path)
+
 
 @task
 def scale_features(df: pd.DataFrame, scaler: StandardScaler):
@@ -107,6 +111,7 @@ def process_data():
     )
     scaler = get_scaler(df)
     df = scale_features(df, scaler)
+    # save_scaler(scaler, config.scaler)
     save_processed_data(df, config)
 
 

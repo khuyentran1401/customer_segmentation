@@ -31,6 +31,7 @@ pca:
   - col2
   - col3
 
+scaler: scaler/standard_scaler.pkl
 elbow_metric: silhouette
 
 image:
