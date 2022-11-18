@@ -16,3 +16,5 @@ main.log
 venv
 /image
 segment.log
+scaler
+model

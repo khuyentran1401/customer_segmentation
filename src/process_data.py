@@ -3,7 +3,6 @@ from omegaconf import DictConfig
 import pandas as pd
 from prefect import task, flow
 from sklearn.preprocessing import StandardScaler
-
 from helper import load_config
 import joblib
 
@@ -14,9 +13,7 @@ def load_data(config: DictConfig) -> pd.DataFrame:
         f"postgresql://{connection.user}:{connection.password}@{connection.host}/{connection.database}",
     )
     query = f'SELECT * FROM "{config.data.raw}"'
-    df = pd.read_sql(query, con=engine)
-
-    return df
+    return pd.read_sql(query, con=engine)
 
 
 @task
@@ -26,7 +23,7 @@ def drop_na(df: pd.DataFrame) -> pd.DataFrame:
 
 @task
 def get_age(df: pd.DataFrame) -> pd.DataFrame:
-    return df.assign(age=df["Year_Birth"].apply(lambda row: 2021 - row))
+    return df.assign(age=2021 - df["Year_Birth"])
 
 
 @task
@@ -111,7 +108,7 @@ def process_data():
     )
     scaler = get_scaler(df)
     df = scale_features(df, scaler)
-    # save_scaler(scaler, config.scaler)
+    save_scaler(scaler, config.scaler)
     save_processed_data(df, config)
 
 

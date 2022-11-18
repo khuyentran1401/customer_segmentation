@@ -11,6 +11,7 @@ from yellowbrick.cluster import KElbowVisualizer
 from omegaconf import DictConfig
 import matplotlib as mpl
 from sqlalchemy import create_engine
+import joblib
 
 
 @task
@@ -20,8 +21,7 @@ def read_processed_data(config: DictConfig):
         f"postgresql://{connection.user}:{connection.password}@{connection.host}/{connection.database}",
     )
     query = f'SELECT * FROM "{config.data.intermediate}"'
-    df = pd.read_sql(query, con=engine)
-    return df
+    return pd.read_sql(query, con=engine)
 
 
 @task
@@ -43,7 +43,6 @@ def get_3d_projection(pca_df: pd.DataFrame) -> dict:
     return {"x": pca_df["col1"], "y": pca_df["col2"], "z": pca_df["col3"]}
 
 
-
 @task
 def get_best_k_cluster(
     pca_df: pd.DataFrame, image_path: str, elbow_metric: str
@@ -56,8 +55,7 @@ def get_best_k_cluster(
     elbow.fit(pca_df)
     elbow.fig.savefig(image_path)
 
-    k_best = elbow.elbow_value_
-    return k_best
+    return elbow.elbow_value_
 
 
 @task
@@ -72,6 +70,12 @@ def predict(
 
     # Predict
     return model.fit_predict(pca_df)
+
+
+@task
+def inverse_scale(df: pd.DataFrame, scaled_path: str):
+    scaler = joblib.load(scaled_path)
+    return pd.DataFrame(scaler.inverse_transform(df), columns=df.columns)
 
 
 @task
@@ -123,8 +127,9 @@ def segment() -> None:
     k_best = get_best_k_cluster(pca_df, config.image.elbow, config.elbow_metric)
     prediction = predict(pca_df, k_best, config.segment)
 
-    data = insert_clusters_to_df(data, prediction)
-    save_segmented_df(data, config)
+    inversed_scaled = inverse_scale(data, config.scaler)
+    added_clusters = insert_clusters_to_df(inversed_scaled, prediction)
+    save_segmented_df(added_clusters, config)
 
     plot_clusters(pca_df, prediction, projections, config.image.clusters)
 
