@@ -1,0 +1,40 @@
+###
+### A complete description of a Prefect Deployment for flow 'main'
+###
+name: customer-segmentation
+description: null
+version: 2c4b4ab2981a69e0b265044e34646181
+# The work queue that will handle this deployment's runs
+work_queue_name: default
+tags: []
+parameters: {}
+schedule: null
+infra_overrides: {}
+
+###
+### DO NOT EDIT BELOW THIS LINE
+###
+flow_name: main
+manifest_path: null
+infrastructure:
+  type: process
+  env: {}
+  labels: {}
+  name: null
+  command: null
+  stream_output: true
+  working_dir: null
+  _block_document_id: 87fa5a98-ea67-43ce-ac65-e9be27201411
+  _block_document_name: anonymous-4b16a269-227b-4835-becf-92ef0a03a814
+  _is_anonymous: true
+  block_type_slug: process
+  _block_type_slug: process
+storage: null
+path: /Users/khuyen/customer_segmentation
+entrypoint: src/main.py:main
+parameter_openapi_schema:
+  title: Parameters
+  type: object
+  properties: {}
+  required: null
+  definitions: null

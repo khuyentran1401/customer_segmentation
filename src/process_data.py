@@ -111,5 +111,5 @@ def process_data():
     save_scaler(scaler, config.scaler)
     save_processed_data(df, config)
 
-
-process_data()
+if __name__=="__main__":
+    process_data()

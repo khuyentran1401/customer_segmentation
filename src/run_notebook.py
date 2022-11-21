@@ -7,7 +7,7 @@ from prefect.blocks.system import Secret
 
 
 @flow
-def get_project_runs_flow():
+def run_notebook():
     hex_credentials = HexCredentials.load("article-demo")
     project_id = Secret.load("hex-project-id").get()
     return get_project_runs(
@@ -17,4 +17,4 @@ def get_project_runs_flow():
 
 
 if __name__ == "__main__":
-    get_project_runs_flow()
+    run_notebook()
