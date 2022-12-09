@@ -1,5 +1,4 @@
 from prefect import flow
-from prefect_hex import HexCredentials
 
 from prefect_hex.project import get_project_runs
 from prefect_hex import HexCredentials

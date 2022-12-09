@@ -20,7 +20,6 @@ connection:
   user: postgres
   password: 123456
   host: localhost:5432
-  # host: 2.tcp.ngrok.io:19344
   database: customer_segmentation
   
 flow: all 
@@ -38,5 +37,3 @@ elbow_metric: silhouette
 image:
   elbow: image/elbow.png
   clusters: image/cluster.png
-
-wandb_mode: 
